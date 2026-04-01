@@ -1,0 +1,3 @@
+npx prisma migrate dev --name update_schema
+npx prisma migrate reset
+npx prisma generate
