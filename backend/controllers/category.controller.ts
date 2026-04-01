@@ -99,8 +99,9 @@ export const createCategory = async (req: Request, res: Response) => {
     const { name } = req.body;
 
     // Validation
-    if (!name) {
-      return res.status(400).json({ error: 'Name is required' });
+    const validation = await validateCategory({ name });
+    if (!validation.valid) {
+      return res.status(400).json({ errors: validation.errors });
     }
 
     const category = await prisma.category.create({
@@ -153,8 +154,9 @@ export const updateCategory = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { name } = req.body;
     // Validation
-    if (!name) {
-      return res.status(400).json({ error: 'Name is required' });
+    const validation = await validateCategory({ name });
+    if (!validation.valid) {
+      return res.status(400).json({ errors: validation.errors });
     }
 
     const category = await prisma.category.update({
@@ -180,6 +182,12 @@ export const updateCategory = async (req: Request, res: Response) => {
 export const deleteCategory = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const existing = await prisma.category.findUnique({
+      where: { id: Number(id) },
+    });
+    if (!existing) {
+      return res.status(404).json({ error: 'Category not found' });
+    }
     await prisma.category.delete({
       where: { id: Number(id) },
     });
@@ -188,3 +196,29 @@ export const deleteCategory = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to delete category' });
   }
 };
+
+// --------------------------------------------- Helper functions ---------------------------------------------
+
+/**
+ * Validates category data before creating or updating a category.
+ * @param data - The category data to validate.
+ * @returns An object containing a boolean 'valid' and an array of 'errors' if any validation rules are violated.
+ */
+export const validateCategory = async (data: {
+  name: string;
+}): Promise<CategoryValidationResult> => {
+  const errors: string[] = [];
+  if (!data.name || data.name.trim() === '') {
+    errors.push('Name is required');
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+  };
+};
+
+export interface CategoryValidationResult {
+  valid: boolean;
+  errors: string[];
+}
