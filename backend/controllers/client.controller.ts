@@ -296,7 +296,6 @@ export const validateClient = async (
   // Required fields
   if (!firstName?.trim()) errors.push('First name is required');
   if (!lastName?.trim()) errors.push('Last name is required');
-  if (!phone?.trim()) errors.push('Phone number is required');
 
   // Email format
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
