@@ -1,9 +1,11 @@
 import express from 'express';
 
-import clientRoutes from './routes/clients.routes';
-import menuItemRoutes from './routes/menuItems.routes';
-import categoryRoutes from './routes/categories.routes';
-import orderRoutes from './routes/orders.routes';
+import clientRoutes from './routes/client.routes';
+import menuItemRoutes from './routes/menuItem.routes';
+import categoryRoutes from './routes/category.routes';
+import orderRoutes from './routes/order.routes';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './swagger.js';
 
 const app = express();
 
@@ -14,5 +16,8 @@ app.use('/clients', clientRoutes);
 app.use('/menu-items', menuItemRoutes);
 app.use('/categories', categoryRoutes);
 app.use('/orders', orderRoutes);
+
+// Swagger UI setup
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 export default app;

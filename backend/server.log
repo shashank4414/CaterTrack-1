@@ -1,0 +1,41 @@
+Server running on port 3000
+Error fetching categories: PrismaClientKnownRequestError: 
+Invalid `prisma.category.findMany()` invocation in
+C:\Projects\PROG_Mobile\CaterTrack\backend\controllers\category.controller.ts:63:46
+
+  60 };
+  61 
+  62 // Query DB
+→ 63 const categories = await prisma.category.findMany(
+URL_INVALID: The URL 'undefined' is not in a valid format
+    at Gr.handleRequestError (C:\Projects\PROG_Mobile\CaterTrack\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:237:13)
+    at Gr.handleAndLogRequestError (C:\Projects\PROG_Mobile\CaterTrack\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:183:12)
+    at Gr.request (C:\Projects\PROG_Mobile\CaterTrack\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:152:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async a (C:\Projects\PROG_Mobile\CaterTrack\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:938:24)
+    at async getCategories (C:\Projects\PROG_Mobile\CaterTrack\backend\controllers\category.controller.ts:63:24) {
+  code: 'URL_INVALID',
+  meta: { modelName: 'Category' },
+  clientVersion: '7.6.0'
+}
+Error fetching categories: PrismaClientKnownRequestError: 
+Invalid `prisma.category.findMany()` invocation in
+C:\Projects\PROG_Mobile\CaterTrack\backend\controllers\category.controller.ts:63:46
+
+  60 };
+  61 
+  62 // Query DB
+→ 63 const categories = await prisma.category.findMany(
+URL_INVALID: The URL 'undefined' is not in a valid format
+    at Gr.handleRequestError (C:\Projects\PROG_Mobile\CaterTrack\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:237:13)
+    at Gr.handleAndLogRequestError (C:\Projects\PROG_Mobile\CaterTrack\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:183:12)
+    at Gr.request (C:\Projects\PROG_Mobile\CaterTrack\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:152:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async a (C:\Projects\PROG_Mobile\CaterTrack\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:938:24)
+    at async getCategories (C:\Projects\PROG_Mobile\CaterTrack\backend\controllers\category.controller.ts:63:24) {
+  code: 'URL_INVALID',
+  meta: { modelName: 'Category' },
+  clientVersion: '7.6.0'
+}
+
+C:\Projects\PROG_Mobile\CaterTrack\backend>More? 

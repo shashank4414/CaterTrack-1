@@ -1,0 +1,27 @@
+Server running on port 3000
+Error fetching categories: TypeError: Cannot read properties of undefined (reading 'replace')
+    at createBetterSQLite3Client (file:///C:/Projects/PROG_Mobile/CaterTrack/backend/node_modules/@prisma/adapter-better-sqlite3/dist/index.mjs:622:22)
+    at PrismaBetterSqlite3AdapterFactory.connect (file:///C:/Projects/PROG_Mobile/CaterTrack/backend/node_modules/@prisma/adapter-better-sqlite3/dist/index.mjs:611:59)
+    at e.connect (C:\Projects\PROG_Mobile\CaterTrack\backend\node_modules\@prisma\client\src\runtime\core\engines\client\LocalExecutor.ts:49:58)
+    at jt.#connectExecutor (C:\Projects\PROG_Mobile\CaterTrack\backend\node_modules\@prisma\client\src\runtime\core\engines\client\ClientEngine.ts:233:34)
+    at callback (C:\Projects\PROG_Mobile\CaterTrack\backend\node_modules\@prisma\client\src\runtime\core\engines\client\ClientEngine.ts:182:35)
+    at Object.runInChildSpan (C:\Projects\PROG_Mobile\CaterTrack\backend\node_modules\@prisma\client\src\runtime\core\tracing\TracingHelper.ts:28:12)
+    at di.runInChildSpan (C:\Projects\PROG_Mobile\CaterTrack\backend\node_modules\@prisma\client\src\runtime\core\tracing\TracingHelper.ts:53:36)
+    at jt.#ensureStarted (C:\Projects\PROG_Mobile\CaterTrack\backend\node_modules\@prisma\client\src\runtime\core\engines\client\ClientEngine.ts:177:47)
+    at jt.request (C:\Projects\PROG_Mobile\CaterTrack\backend\node_modules\@prisma\client\src\runtime\core\engines\client\ClientEngine.ts:464:52)
+    at Object.singleLoader (C:\Projects\PROG_Mobile\CaterTrack\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:112:52) {
+  clientVersion: '7.6.0'
+}
+Error fetching categories: TypeError: Cannot read properties of undefined (reading 'replace')
+    at createBetterSQLite3Client (file:///C:/Projects/PROG_Mobile/CaterTrack/backend/node_modules/@prisma/adapter-better-sqlite3/dist/index.mjs:622:22)
+    at PrismaBetterSqlite3AdapterFactory.connect (file:///C:/Projects/PROG_Mobile/CaterTrack/backend/node_modules/@prisma/adapter-better-sqlite3/dist/index.mjs:611:59)
+    at e.connect (C:\Projects\PROG_Mobile\CaterTrack\backend\node_modules\@prisma\client\src\runtime\core\engines\client\LocalExecutor.ts:49:58)
+    at jt.#connectExecutor (C:\Projects\PROG_Mobile\CaterTrack\backend\node_modules\@prisma\client\src\runtime\core\engines\client\ClientEngine.ts:233:34)
+    at callback (C:\Projects\PROG_Mobile\CaterTrack\backend\node_modules\@prisma\client\src\runtime\core\engines\client\ClientEngine.ts:182:35)
+    at Object.runInChildSpan (C:\Projects\PROG_Mobile\CaterTrack\backend\node_modules\@prisma\client\src\runtime\core\tracing\TracingHelper.ts:28:12)
+    at di.runInChildSpan (C:\Projects\PROG_Mobile\CaterTrack\backend\node_modules\@prisma\client\src\runtime\core\tracing\TracingHelper.ts:53:36)
+    at jt.#ensureStarted (C:\Projects\PROG_Mobile\CaterTrack\backend\node_modules\@prisma\client\src\runtime\core\engines\client\ClientEngine.ts:177:47)
+    at jt.request (C:\Projects\PROG_Mobile\CaterTrack\backend\node_modules\@prisma\client\src\runtime\core\engines\client\ClientEngine.ts:464:52)
+    at Object.singleLoader (C:\Projects\PROG_Mobile\CaterTrack\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:112:52) {
+  clientVersion: '7.6.0'
+}

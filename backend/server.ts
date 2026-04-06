@@ -1,4 +1,6 @@
 import express from 'express';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './swagger.js';
 import clientRoutes from './routes/client.routes';
 import categoryRoutes from './routes/category.routes';
 import menuItemRoutes from './routes/menuItem.routes';
@@ -12,6 +14,9 @@ app.use(express.json());
 app.get('/', (req, res) => {
   res.send('Catering API is running');
 });
+
+// Swagger UI
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Register routes
 app.use('/clients', clientRoutes);

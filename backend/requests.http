@@ -1,0 +1,161 @@
+@baseUrl = http://localhost:3000
+
+### Root
+GET {{baseUrl}}/
+
+# ─── CLIENTS ────────────────────────────────────────────────────────────────
+
+### Get all clients
+GET {{baseUrl}}/clients
+
+### Get clients with search/filter
+GET {{baseUrl}}/clients?search=john&page=1&limit=5
+
+### Get client by ID
+GET {{baseUrl}}/clients/1
+
+### Create client
+POST {{baseUrl}}/clients
+Content-Type: application/json
+
+{
+  "firstName": "Jane",
+  "lastName": "Doe",
+  "email": "jane@example.com",
+  "phone": "555-1234"
+}
+
+### Update client
+PUT {{baseUrl}}/clients/1
+Content-Type: application/json
+
+{
+  "firstName": "Jane",
+  "lastName": "Smith",
+  "email": "jane@example.com",
+  "phone": "555-9999"
+}
+
+### Delete client
+DELETE {{baseUrl}}/clients/1
+
+# ─── CATEGORIES ─────────────────────────────────────────────────────────────
+
+### Get all categories
+GET {{baseUrl}}/categories
+
+### Create category
+POST {{baseUrl}}/categories
+Content-Type: application/json
+
+{
+  "name": "Appetizers"
+}
+
+### Update category
+PUT {{baseUrl}}/categories/1
+Content-Type: application/json
+
+{
+  "name": "Starters"
+}
+
+### Delete category
+DELETE {{baseUrl}}/categories/1
+
+# ─── MENU ITEMS ──────────────────────────────────────────────────────────────
+
+### Get all menu items
+GET {{baseUrl}}/menu-items
+
+### Get menu items filtered by category
+GET {{baseUrl}}/menu-items?categoryId=1
+
+### Create menu item
+POST {{baseUrl}}/menu-items
+Content-Type: application/json
+
+{
+  "name": "Spring Rolls",
+  "description": "Crispy veggie rolls",
+  "price": 8.99,
+  "categoryId": 1
+}
+
+### Update menu item
+PUT {{baseUrl}}/menu-items/1
+Content-Type: application/json
+
+{
+  "name": "Spring Rolls",
+  "description": "Crispy veggie rolls",
+  "price": 9.99,
+  "categoryId": 1
+}
+
+### Delete menu item
+DELETE {{baseUrl}}/menu-items/1
+
+# ─── ORDERS ──────────────────────────────────────────────────────────────────
+
+### Get all orders
+GET {{baseUrl}}/orders
+
+### Get orders by status
+GET {{baseUrl}}/orders?status=pending
+
+### Create order
+POST {{baseUrl}}/orders
+Content-Type: application/json
+
+{
+  "clientId": 1,
+  "total": 45.00,
+  "status": "pending",
+  "deliveryDate": "2026-04-10T12:00:00Z",
+  "discount": 0
+}
+
+### Update order
+PUT {{baseUrl}}/orders/1
+Content-Type: application/json
+
+{
+  "status": "confirmed",
+  "total": 45.00,
+  "clientId": 1
+}
+
+### Delete order
+DELETE {{baseUrl}}/orders/1
+
+# ─── ORDER ITEMS ─────────────────────────────────────────────────────────────
+
+### Get all order items
+GET {{baseUrl}}/order-items
+
+### Get order items for a specific order
+GET {{baseUrl}}/order-items?orderId=1
+
+### Create order item
+POST {{baseUrl}}/order-items
+Content-Type: application/json
+
+{
+  "orderId": 1,
+  "menuItemId": 1,
+  "quantity": 2
+}
+
+### Update order item
+PUT {{baseUrl}}/order-items/1
+Content-Type: application/json
+
+{
+  "orderId": 1,
+  "menuItemId": 1,
+  "quantity": 3
+}
+
+### Delete order item
+DELETE {{baseUrl}}/order-items/1
