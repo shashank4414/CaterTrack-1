@@ -53,13 +53,11 @@ export const getMenuItems = async (req: Request, res: Response) => {
                 {
                   name: {
                     contains: String(search),
-                    mode: 'insensitive',
                   },
                 },
                 {
                   description: {
                     contains: String(search),
-                    mode: 'insensitive',
                   },
                 },
               ],
