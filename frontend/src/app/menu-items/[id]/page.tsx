@@ -19,9 +19,7 @@ export default async function MenuItemDetailPage({
 
   if (!menuItem) notFound();
 
-  const category = categories.find(
-    (entry) => entry.id === menuItem.categoryId,
-  );
+  const category = categories.find((entry) => entry.id === menuItem.categoryId);
 
   return (
     <main className="min-h-screen bg-amber-50 px-4 py-10 sm:px-8 lg:px-12">
@@ -61,7 +59,9 @@ export default async function MenuItemDetailPage({
                 </span>
               </div>
               {menuItem.subtitle?.trim() && (
-                <p className="mt-1 text-sm text-stone-500">{menuItem.subtitle}</p>
+                <p className="mt-1 text-sm text-stone-500">
+                  {menuItem.subtitle}
+                </p>
               )}
             </div>
 

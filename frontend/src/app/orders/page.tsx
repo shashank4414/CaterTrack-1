@@ -1,46 +1,49 @@
 import Link from 'next/link';
-import SearchInput from './SearchInput';
 import {
-  Category,
   formatCurrency,
-  getCategories,
-  getMenuItems,
-  getMenuItemsPageHref,
+  formatDate,
+  getClientDisplayName,
+  getOrderItemCount,
+  getOrders,
+  getOrdersPageHref,
+  ORDER_STATUS_FILTERS,
+  ORDER_STATUS_STYLES,
 } from './data';
 
-type MenuItemsPageProps = {
+type OrdersPageProps = {
   searchParams?: Promise<{
-    search?: string | string[];
+    status?: string | string[];
     page?: string | string[];
   }>;
 };
 
-function getCategoryName(
-  categoryId: number,
-  categories: Map<number, Category>,
-) {
-  return categories.get(categoryId)?.name ?? `Category #${categoryId}`;
-}
+const FILTER_LABELS: Record<string, string> = {
+  all: 'All orders',
+  pending: 'Pending',
+  confirmed: 'Confirmed',
+  completed: 'Completed',
+  cancelled: 'Cancelled',
+};
 
-export default async function MenuItemsPage({
-  searchParams,
-}: MenuItemsPageProps) {
+export default async function OrdersPage({ searchParams }: OrdersPageProps) {
   const resolvedSearchParams = await searchParams;
 
-  const search = Array.isArray(resolvedSearchParams?.search)
-    ? resolvedSearchParams.search[0]?.trim() || ''
-    : resolvedSearchParams?.search?.trim() || '';
+  const rawStatus = Array.isArray(resolvedSearchParams?.status)
+    ? resolvedSearchParams.status[0]?.trim().toLowerCase() || 'all'
+    : resolvedSearchParams?.status?.trim().toLowerCase() || 'all';
+  const status = ORDER_STATUS_FILTERS.includes(
+    rawStatus as (typeof ORDER_STATUS_FILTERS)[number],
+  )
+    ? rawStatus
+    : 'all';
   const rawPage = Array.isArray(resolvedSearchParams?.page)
     ? resolvedSearchParams.page[0]?.trim() || '1'
     : resolvedSearchParams?.page?.trim() || '1';
   const page = Math.max(1, Number(rawPage) || 1);
 
-  const [result, categories] = await Promise.all([
-    getMenuItems(search, page)
-      .then((data) => ({ data, error: false }))
-      .catch(() => ({ data: null, error: true })),
-    getCategories().catch(() => []),
-  ]);
+  const result = await getOrders(status, page)
+    .then((data) => ({ data, error: false }))
+    .catch(() => ({ data: null, error: true }));
 
   if (result.error || !result.data) {
     return (
@@ -62,7 +65,7 @@ export default async function MenuItemsPage({
             </svg>
           </div>
           <h1 className="text-base font-semibold text-slate-900">
-            Unable to load menu items
+            Unable to load orders
           </h1>
           <p className="mt-1 text-sm text-stone-500">
             The API request failed. Please try again.
@@ -73,28 +76,26 @@ export default async function MenuItemsPage({
   }
 
   const {
-    data: menuItems,
+    data: orders,
     total,
     page: currentPage,
     totalPages,
     limit,
   } = result.data;
-  const categoryMap = new Map(
-    categories.map((category) => [category.id, category]),
-  );
   const pageStart = total === 0 ? 0 : (currentPage - 1) * limit + 1;
-  const pageEnd = total === 0 ? 0 : pageStart + menuItems.length - 1;
+  const pageEnd = total === 0 ? 0 : pageStart + orders.length - 1;
   const canGoToPreviousPage = currentPage > 1;
   const canGoToNextPage = currentPage < totalPages;
-  const resultsLabel = search
-    ? `${menuItems.length} result${menuItems.length !== 1 ? 's' : ''} for "${search}"`
-    : `${menuItems.length} menu item${menuItems.length !== 1 ? 's' : ''} total`;
+  const resultsLabel =
+    status === 'all'
+      ? `${orders.length} order${orders.length !== 1 ? 's' : ''} shown`
+      : `${orders.length} ${status} order${orders.length !== 1 ? 's' : ''} shown`;
   const mobileSummaryLabel =
-    menuItems.length > 0
+    orders.length > 0
       ? resultsLabel
-      : search
-        ? 'No matching menu items'
-        : 'No menu items yet';
+      : status === 'all'
+        ? 'No orders yet'
+        : `No ${status} orders`;
 
   return (
     <main className="min-h-screen bg-amber-50 px-4 py-10 sm:px-8 lg:px-12">
@@ -102,17 +103,17 @@ export default async function MenuItemsPage({
         <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-orange-700">
-              Menu Catalog
+              Order Workflow
             </p>
             <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-              Menu items
+              Orders
             </h1>
             <p className="mt-1 text-sm text-stone-600">
-              Browse, update, and add items to your catering menu.
+              Manage active work, delivery dates, and line-item totals.
             </p>
           </div>
           <Link
-            href="/menu-items/new"
+            href="/orders/new"
             className="hidden items-center justify-center gap-1.5 rounded-full border border-orange-200 bg-white/90 px-4 py-2 text-sm font-semibold text-orange-800 shadow-[0_12px_28px_-24px_rgba(120,53,15,0.5)] transition hover:border-orange-300 hover:bg-orange-50 hover:text-orange-900 sm:inline-flex"
           >
             <svg
@@ -128,18 +129,36 @@ export default async function MenuItemsPage({
                 d="M12 4.5v15m7.5-7.5h-15"
               />
             </svg>
-            New menu item
+            New order
           </Link>
         </header>
 
-        <SearchInput defaultValue={search} />
+        <div className="flex flex-wrap gap-2">
+          {ORDER_STATUS_FILTERS.map((filter) => {
+            const isActive = filter === status;
+
+            return (
+              <Link
+                key={filter}
+                href={getOrdersPageHref(filter, 1)}
+                className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                  isActive
+                    ? 'border-orange-300 bg-orange-100 text-orange-900'
+                    : 'border-stone-300 bg-white/90 text-stone-600 hover:border-orange-200 hover:bg-orange-50 hover:text-orange-800'
+                }`}
+              >
+                {FILTER_LABELS[filter]}
+              </Link>
+            );
+          })}
+        </div>
 
         <div className="flex items-start justify-between gap-2 sm:hidden">
           <p className="min-w-0 flex-1 text-xs font-medium leading-5 tracking-wide text-stone-600">
             {mobileSummaryLabel}
           </p>
           <Link
-            href="/menu-items/new"
+            href="/orders/new"
             className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full border border-orange-200 bg-white/90 px-3 py-1.5 text-xs font-semibold text-orange-800 shadow-[0_12px_28px_-24px_rgba(120,53,15,0.5)] transition hover:border-orange-300 hover:bg-orange-50 hover:text-orange-900"
           >
             <svg
@@ -155,70 +174,94 @@ export default async function MenuItemsPage({
                 d="M12 4.5v15m7.5-7.5h-15"
               />
             </svg>
-            New item
+            New order
           </Link>
         </div>
 
-        {menuItems.length > 0 && (
+        {orders.length > 0 && (
           <p className="hidden text-xs font-medium tracking-wide text-stone-600 sm:block">
             {resultsLabel}
           </p>
         )}
 
-        {menuItems.length === 0 ? (
+        {orders.length === 0 ? (
           <div className="rounded-3xl border border-stone-300 bg-white/85 py-16 text-center shadow-[0_24px_60px_-36px_rgba(120,53,15,0.35)] backdrop-blur-sm">
             <p className="text-sm font-medium text-slate-800">
-              {search ? 'No matching menu items' : 'No menu items yet'}
+              {status === 'all' ? 'No orders yet' : `No ${status} orders`}
             </p>
             <p className="mt-1 text-xs text-stone-500">
-              {search
-                ? 'Try adjusting your search term.'
-                : 'Your menu items will appear here once added.'}
+              Orders will appear here as they move through your workflow.
             </p>
           </div>
         ) : (
           <>
             <div className="space-y-2 md:hidden">
-              {menuItems.map((menuItem) => (
-                <Link
-                  key={menuItem.id}
-                  href={`/menu-items/${menuItem.id}`}
-                  className="block rounded-2xl border border-stone-300 bg-white/90 px-4 py-3 shadow-[0_16px_40px_-30px_rgba(120,53,15,0.35)] transition hover:border-orange-300 hover:bg-orange-50/70"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-slate-900">
-                        {menuItem.name}
-                      </p>
-                      {menuItem.subtitle?.trim() && (
-                        <p className="mt-0.5 text-xs text-stone-500">
-                          {menuItem.subtitle}
-                        </p>
-                      )}
-                    </div>
-                    <span className="shrink-0 text-xs text-stone-400">
-                      #{menuItem.id}
-                    </span>
-                  </div>
+              {orders.map((order) => {
+                const statusStyle =
+                  ORDER_STATUS_STYLES[order.status.toLowerCase()] ??
+                  'bg-stone-50 text-stone-600 border-stone-200';
 
-                  <div className="mt-2 flex items-center justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <span className="inline-flex max-w-full truncate rounded-full border border-orange-200 bg-orange-50 px-2.5 py-0.5 text-[11px] font-medium text-orange-800">
-                        {getCategoryName(menuItem.categoryId, categoryMap)}
+                return (
+                  <Link
+                    key={order.id}
+                    href={`/orders/${order.id}`}
+                    className="block rounded-2xl border border-stone-300 bg-white/90 px-4 py-3 shadow-[0_16px_40px_-30px_rgba(120,53,15,0.35)] transition hover:border-orange-300 hover:bg-orange-50/70"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-slate-900">
+                          {getClientDisplayName(order.client)}
+                        </p>
+                        <p className="mt-0.5 text-xs text-stone-500">
+                          Order #{order.id}
+                        </p>
+                      </div>
+                      <span
+                        className={`inline-flex shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-medium capitalize ${statusStyle}`}
+                      >
+                        {order.status}
                       </span>
                     </div>
-                    <span className="shrink-0 text-sm font-semibold text-slate-900">
-                      {formatCurrency(menuItem.price)}
-                    </span>
-                  </div>
 
-                  {menuItem.description?.trim() && (
-                    <p className="mt-2 text-xs text-stone-600">
-                      {menuItem.description}
-                    </p>
-                  )}
-                </Link>
-              ))}
+                    <div className="mt-3 grid grid-cols-2 gap-3 text-xs text-stone-600">
+                      <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-stone-400">
+                          Total
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                          {formatCurrency(order.total)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-stone-400">
+                          Items
+                        </p>
+                        <p className="mt-1 text-sm text-slate-700">
+                          {getOrderItemCount(order)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-stone-400">
+                          Delivery
+                        </p>
+                        <p className="mt-1 text-sm text-slate-700">
+                          {order.deliveryDate
+                            ? formatDate(order.deliveryDate)
+                            : '—'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-stone-400">
+                          Created
+                        </p>
+                        <p className="mt-1 text-sm text-slate-700">
+                          {formatDate(order.createdAt)}
+                        </p>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
 
             <div className="hidden overflow-hidden rounded-3xl border border-stone-300 bg-white/90 shadow-[0_24px_60px_-36px_rgba(120,53,15,0.35)] backdrop-blur-sm md:block">
@@ -229,62 +272,73 @@ export default async function MenuItemsPage({
                       ID
                     </th>
                     <th className="px-5 py-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-100/80">
-                      Name
+                      Client
                     </th>
                     <th className="px-5 py-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-100/80">
-                      Category
+                      Status
                     </th>
                     <th className="px-5 py-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-100/80">
-                      Price
+                      Items
                     </th>
                     <th className="px-5 py-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-100/80">
-                      Description
+                      Total
+                    </th>
+                    <th className="px-5 py-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-100/80">
+                      Delivery
+                    </th>
+                    <th className="px-5 py-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-100/80">
+                      Created
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
-                  {menuItems.map((menuItem) => (
-                    <tr
-                      key={menuItem.id}
-                      className="relative transition hover:bg-orange-50/70"
-                    >
-                      <td className="whitespace-nowrap px-5 py-3.5 text-xs font-medium text-stone-400">
-                        <Link
-                          href={`/menu-items/${menuItem.id}`}
-                          className="absolute inset-0"
-                          aria-label={`View ${menuItem.name}`}
-                        />
-                        #{menuItem.id}
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <div>
-                          <span className="font-medium text-slate-900">
-                            {menuItem.name}
+                  {orders.map((order) => {
+                    const statusStyle =
+                      ORDER_STATUS_STYLES[order.status.toLowerCase()] ??
+                      'bg-stone-50 text-stone-600 border-stone-200';
+
+                    return (
+                      <tr
+                        key={order.id}
+                        className="relative transition hover:bg-orange-50/70"
+                      >
+                        <td className="whitespace-nowrap px-5 py-3.5 text-xs font-medium text-stone-400">
+                          <Link
+                            href={`/orders/${order.id}`}
+                            className="absolute inset-0"
+                            aria-label={`View order ${order.id}`}
+                          />
+                          #{order.id}
+                        </td>
+                        <td className="px-5 py-3.5 font-medium text-slate-900">
+                          {getClientDisplayName(order.client)}
+                        </td>
+                        <td className="px-5 py-3.5">
+                          <span
+                            className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium capitalize ${statusStyle}`}
+                          >
+                            {order.status}
                           </span>
-                          {menuItem.subtitle?.trim() && (
-                            <p className="mt-0.5 text-xs text-stone-500">
-                              {menuItem.subtitle}
-                            </p>
+                        </td>
+                        <td className="px-5 py-3.5 text-slate-700">
+                          {getOrderItemCount(order)}
+                        </td>
+                        <td className="whitespace-nowrap px-5 py-3.5 font-medium text-slate-900">
+                          {formatCurrency(order.total)}
+                        </td>
+                        <td className="whitespace-nowrap px-5 py-3.5 text-stone-500">
+                          {order.deliveryDate ? (
+                            formatDate(order.deliveryDate)
+                          ) : (
+                            <span className="text-stone-300">—</span>
                           )}
-                        </div>
-                      </td>
-                      <td className="px-5 py-3.5 text-slate-700">
-                        <span className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-2.5 py-0.5 text-xs font-medium text-orange-800">
-                          {getCategoryName(menuItem.categoryId, categoryMap)}
-                        </span>
-                      </td>
-                      <td className="whitespace-nowrap px-5 py-3.5 font-medium text-slate-900">
-                        {formatCurrency(menuItem.price)}
-                      </td>
-                      <td className="max-w-lg px-5 py-3.5 text-stone-500">
-                        {menuItem.description?.trim() ? (
-                          menuItem.description
-                        ) : (
-                          <span className="text-stone-300">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className="whitespace-nowrap px-5 py-3.5 text-stone-500">
+                          {formatDate(order.createdAt)}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -305,13 +359,13 @@ export default async function MenuItemsPage({
                     <span className="font-semibold text-slate-900">
                       {total}
                     </span>{' '}
-                    menu items
+                    orders
                   </p>
                 </div>
 
                 <div className="flex items-center justify-between gap-2 sm:justify-end">
                   <Link
-                    href={getMenuItemsPageHref(search, currentPage - 1)}
+                    href={getOrdersPageHref(status, currentPage - 1)}
                     aria-disabled={!canGoToPreviousPage}
                     className={`inline-flex w-28 items-center justify-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition ${
                       canGoToPreviousPage
@@ -343,7 +397,7 @@ export default async function MenuItemsPage({
                   </div>
 
                   <Link
-                    href={getMenuItemsPageHref(search, currentPage + 1)}
+                    href={getOrdersPageHref(status, currentPage + 1)}
                     aria-disabled={!canGoToNextPage}
                     className={`inline-flex w-28 items-center justify-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition ${
                       canGoToNextPage

@@ -1,4 +1,10 @@
-export type MenuItem = {
+export type Category = {
+  id: number;
+  name: string;
+  subtitle: string | null;
+};
+
+export type MenuItemSummary = {
   id: number;
   name: string;
   subtitle: string | null;
@@ -7,22 +13,16 @@ export type MenuItem = {
   categoryId: number;
 };
 
-export type Category = {
-  id: number;
-  name: string;
-  subtitle: string | null;
-};
-
-export type MenuItemsResponse = {
-  data: MenuItem[];
+export type CategoriesResponse = {
+  data: Category[];
   page: number;
   limit: number;
   total: number;
   totalPages: number;
 };
 
-type CategoriesResponse = {
-  data: Category[];
+type MenuItemsResponse = {
+  data: MenuItemSummary[];
   page: number;
   limit: number;
   total: number;
@@ -31,50 +31,13 @@ type CategoriesResponse = {
 
 const API_BASE_URL = process.env.API_BASE_URL ?? 'http://localhost:3001';
 
-export async function getMenuItems(
+export async function getCategories(
   search: string,
   page: number,
-): Promise<MenuItemsResponse> {
+): Promise<CategoriesResponse> {
   const query = new URLSearchParams();
   if (search) query.set('search', search);
   if (page > 1) query.set('page', String(page));
-
-  const response = await fetch(
-    `${API_BASE_URL}/menu-items?${query.toString()}`,
-    {
-      cache: 'no-store',
-    },
-  );
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch menu items');
-  }
-
-  return response.json();
-}
-
-export async function getMenuItem(id: string): Promise<MenuItem | null> {
-  const response = await fetch(`${API_BASE_URL}/menu-items/${id}`, {
-    cache: 'no-store',
-  });
-
-  if (response.status === 404) {
-    return null;
-  }
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch menu item');
-  }
-
-  return response.json();
-}
-
-export async function getCategories(): Promise<Category[]> {
-  const query = new URLSearchParams({
-    limit: '100',
-    sortBy: 'name',
-    order: 'asc',
-  });
 
   const response = await fetch(
     `${API_BASE_URL}/categories?${query.toString()}`,
@@ -87,16 +50,55 @@ export async function getCategories(): Promise<Category[]> {
     throw new Error('Failed to fetch categories');
   }
 
-  const data: CategoriesResponse = await response.json();
-  return data.data;
+  return response.json();
 }
 
-export function getMenuItemsPageHref(search: string, page: number) {
+export async function getCategory(id: string): Promise<Category | null> {
+  const response = await fetch(`${API_BASE_URL}/categories/${id}`, {
+    cache: 'no-store',
+  });
+
+  if (response.status === 404) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch category');
+  }
+
+  return response.json();
+}
+
+export async function getCategoryMenuItems(
+  categoryId: string,
+): Promise<MenuItemsResponse> {
+  const query = new URLSearchParams({
+    categoryId,
+    limit: '50',
+    sortBy: 'name',
+    order: 'asc',
+  });
+
+  const response = await fetch(
+    `${API_BASE_URL}/menu-items?${query.toString()}`,
+    {
+      cache: 'no-store',
+    },
+  );
+
+  if (!response.ok) {
+    return { data: [], page: 1, limit: 50, total: 0, totalPages: 0 };
+  }
+
+  return response.json();
+}
+
+export function getCategoriesPageHref(search: string, page: number) {
   const query = new URLSearchParams();
   if (search) query.set('search', search);
   if (page > 1) query.set('page', String(page));
   const queryString = query.toString();
-  return queryString ? `/menu-items?${queryString}` : '/menu-items';
+  return queryString ? `/categories?${queryString}` : '/categories';
 }
 
 export function formatCurrency(amount: number) {

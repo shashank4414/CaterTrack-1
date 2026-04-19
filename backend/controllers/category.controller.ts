@@ -50,13 +50,11 @@ export const getCategories = async (req: Request, res: Response) => {
                 {
                   name: {
                     contains: String(search),
-                    mode: 'insensitive',
                   },
                 },
                 {
                   subtitle: {
                     contains: String(search),
-                    mode: 'insensitive',
                   },
                 },
               ],

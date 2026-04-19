@@ -1,30 +1,17 @@
 import Link from 'next/link';
 import SearchInput from './SearchInput';
-import {
-  Category,
-  formatCurrency,
-  getCategories,
-  getMenuItems,
-  getMenuItemsPageHref,
-} from './data';
+import { getCategories, getCategoriesPageHref } from './data';
 
-type MenuItemsPageProps = {
+type CategoriesPageProps = {
   searchParams?: Promise<{
     search?: string | string[];
     page?: string | string[];
   }>;
 };
 
-function getCategoryName(
-  categoryId: number,
-  categories: Map<number, Category>,
-) {
-  return categories.get(categoryId)?.name ?? `Category #${categoryId}`;
-}
-
-export default async function MenuItemsPage({
+export default async function CategoriesPage({
   searchParams,
-}: MenuItemsPageProps) {
+}: CategoriesPageProps) {
   const resolvedSearchParams = await searchParams;
 
   const search = Array.isArray(resolvedSearchParams?.search)
@@ -35,12 +22,9 @@ export default async function MenuItemsPage({
     : resolvedSearchParams?.page?.trim() || '1';
   const page = Math.max(1, Number(rawPage) || 1);
 
-  const [result, categories] = await Promise.all([
-    getMenuItems(search, page)
-      .then((data) => ({ data, error: false }))
-      .catch(() => ({ data: null, error: true })),
-    getCategories().catch(() => []),
-  ]);
+  const result = await getCategories(search, page)
+    .then((data) => ({ data, error: false }))
+    .catch(() => ({ data: null, error: true }));
 
   if (result.error || !result.data) {
     return (
@@ -62,7 +46,7 @@ export default async function MenuItemsPage({
             </svg>
           </div>
           <h1 className="text-base font-semibold text-slate-900">
-            Unable to load menu items
+            Unable to load categories
           </h1>
           <p className="mt-1 text-sm text-stone-500">
             The API request failed. Please try again.
@@ -73,28 +57,25 @@ export default async function MenuItemsPage({
   }
 
   const {
-    data: menuItems,
+    data: categories,
     total,
     page: currentPage,
     totalPages,
     limit,
   } = result.data;
-  const categoryMap = new Map(
-    categories.map((category) => [category.id, category]),
-  );
   const pageStart = total === 0 ? 0 : (currentPage - 1) * limit + 1;
-  const pageEnd = total === 0 ? 0 : pageStart + menuItems.length - 1;
+  const pageEnd = total === 0 ? 0 : pageStart + categories.length - 1;
   const canGoToPreviousPage = currentPage > 1;
   const canGoToNextPage = currentPage < totalPages;
   const resultsLabel = search
-    ? `${menuItems.length} result${menuItems.length !== 1 ? 's' : ''} for "${search}"`
-    : `${menuItems.length} menu item${menuItems.length !== 1 ? 's' : ''} total`;
+    ? `${categories.length} result${categories.length !== 1 ? 's' : ''} for "${search}"`
+    : `${categories.length} categor${categories.length !== 1 ? 'ies' : 'y'} total`;
   const mobileSummaryLabel =
-    menuItems.length > 0
+    categories.length > 0
       ? resultsLabel
       : search
-        ? 'No matching menu items'
-        : 'No menu items yet';
+        ? 'No matching categories'
+        : 'No categories yet';
 
   return (
     <main className="min-h-screen bg-amber-50 px-4 py-10 sm:px-8 lg:px-12">
@@ -102,17 +83,17 @@ export default async function MenuItemsPage({
         <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-orange-700">
-              Menu Catalog
+              Category Catalog
             </p>
             <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-              Menu items
+              Categories
             </h1>
             <p className="mt-1 text-sm text-stone-600">
-              Browse, update, and add items to your catering menu.
+              Organize menu items into clear, reusable groups.
             </p>
           </div>
           <Link
-            href="/menu-items/new"
+            href="/categories/new"
             className="hidden items-center justify-center gap-1.5 rounded-full border border-orange-200 bg-white/90 px-4 py-2 text-sm font-semibold text-orange-800 shadow-[0_12px_28px_-24px_rgba(120,53,15,0.5)] transition hover:border-orange-300 hover:bg-orange-50 hover:text-orange-900 sm:inline-flex"
           >
             <svg
@@ -128,7 +109,7 @@ export default async function MenuItemsPage({
                 d="M12 4.5v15m7.5-7.5h-15"
               />
             </svg>
-            New menu item
+            New category
           </Link>
         </header>
 
@@ -139,7 +120,7 @@ export default async function MenuItemsPage({
             {mobileSummaryLabel}
           </p>
           <Link
-            href="/menu-items/new"
+            href="/categories/new"
             className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full border border-orange-200 bg-white/90 px-3 py-1.5 text-xs font-semibold text-orange-800 shadow-[0_12px_28px_-24px_rgba(120,53,15,0.5)] transition hover:border-orange-300 hover:bg-orange-50 hover:text-orange-900"
           >
             <svg
@@ -155,68 +136,51 @@ export default async function MenuItemsPage({
                 d="M12 4.5v15m7.5-7.5h-15"
               />
             </svg>
-            New item
+            New category
           </Link>
         </div>
 
-        {menuItems.length > 0 && (
+        {categories.length > 0 && (
           <p className="hidden text-xs font-medium tracking-wide text-stone-600 sm:block">
             {resultsLabel}
           </p>
         )}
 
-        {menuItems.length === 0 ? (
+        {categories.length === 0 ? (
           <div className="rounded-3xl border border-stone-300 bg-white/85 py-16 text-center shadow-[0_24px_60px_-36px_rgba(120,53,15,0.35)] backdrop-blur-sm">
             <p className="text-sm font-medium text-slate-800">
-              {search ? 'No matching menu items' : 'No menu items yet'}
+              {search ? 'No matching categories' : 'No categories yet'}
             </p>
             <p className="mt-1 text-xs text-stone-500">
               {search
                 ? 'Try adjusting your search term.'
-                : 'Your menu items will appear here once added.'}
+                : 'Your category records will appear here once added.'}
             </p>
           </div>
         ) : (
           <>
             <div className="space-y-2 md:hidden">
-              {menuItems.map((menuItem) => (
+              {categories.map((category) => (
                 <Link
-                  key={menuItem.id}
-                  href={`/menu-items/${menuItem.id}`}
+                  key={category.id}
+                  href={`/categories/${category.id}`}
                   className="block rounded-2xl border border-stone-300 bg-white/90 px-4 py-3 shadow-[0_16px_40px_-30px_rgba(120,53,15,0.35)] transition hover:border-orange-300 hover:bg-orange-50/70"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold text-slate-900">
-                        {menuItem.name}
+                        {category.name}
                       </p>
-                      {menuItem.subtitle?.trim() && (
+                      {category.subtitle?.trim() && (
                         <p className="mt-0.5 text-xs text-stone-500">
-                          {menuItem.subtitle}
+                          {category.subtitle}
                         </p>
                       )}
                     </div>
                     <span className="shrink-0 text-xs text-stone-400">
-                      #{menuItem.id}
+                      #{category.id}
                     </span>
                   </div>
-
-                  <div className="mt-2 flex items-center justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <span className="inline-flex max-w-full truncate rounded-full border border-orange-200 bg-orange-50 px-2.5 py-0.5 text-[11px] font-medium text-orange-800">
-                        {getCategoryName(menuItem.categoryId, categoryMap)}
-                      </span>
-                    </div>
-                    <span className="shrink-0 text-sm font-semibold text-slate-900">
-                      {formatCurrency(menuItem.price)}
-                    </span>
-                  </div>
-
-                  {menuItem.description?.trim() && (
-                    <p className="mt-2 text-xs text-stone-600">
-                      {menuItem.description}
-                    </p>
-                  )}
                 </Link>
               ))}
             </div>
@@ -232,53 +196,30 @@ export default async function MenuItemsPage({
                       Name
                     </th>
                     <th className="px-5 py-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-100/80">
-                      Category
-                    </th>
-                    <th className="px-5 py-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-100/80">
-                      Price
-                    </th>
-                    <th className="px-5 py-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-100/80">
-                      Description
+                      Subtitle
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
-                  {menuItems.map((menuItem) => (
+                  {categories.map((category) => (
                     <tr
-                      key={menuItem.id}
+                      key={category.id}
                       className="relative transition hover:bg-orange-50/70"
                     >
                       <td className="whitespace-nowrap px-5 py-3.5 text-xs font-medium text-stone-400">
                         <Link
-                          href={`/menu-items/${menuItem.id}`}
+                          href={`/categories/${category.id}`}
                           className="absolute inset-0"
-                          aria-label={`View ${menuItem.name}`}
+                          aria-label={`View ${category.name}`}
                         />
-                        #{menuItem.id}
+                        #{category.id}
                       </td>
-                      <td className="px-5 py-3.5">
-                        <div>
-                          <span className="font-medium text-slate-900">
-                            {menuItem.name}
-                          </span>
-                          {menuItem.subtitle?.trim() && (
-                            <p className="mt-0.5 text-xs text-stone-500">
-                              {menuItem.subtitle}
-                            </p>
-                          )}
-                        </div>
+                      <td className="px-5 py-3.5 font-medium text-slate-900">
+                        {category.name}
                       </td>
-                      <td className="px-5 py-3.5 text-slate-700">
-                        <span className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-2.5 py-0.5 text-xs font-medium text-orange-800">
-                          {getCategoryName(menuItem.categoryId, categoryMap)}
-                        </span>
-                      </td>
-                      <td className="whitespace-nowrap px-5 py-3.5 font-medium text-slate-900">
-                        {formatCurrency(menuItem.price)}
-                      </td>
-                      <td className="max-w-lg px-5 py-3.5 text-stone-500">
-                        {menuItem.description?.trim() ? (
-                          menuItem.description
+                      <td className="px-5 py-3.5 text-stone-500">
+                        {category.subtitle?.trim() ? (
+                          category.subtitle
                         ) : (
                           <span className="text-stone-300">—</span>
                         )}
@@ -305,13 +246,13 @@ export default async function MenuItemsPage({
                     <span className="font-semibold text-slate-900">
                       {total}
                     </span>{' '}
-                    menu items
+                    categories
                   </p>
                 </div>
 
                 <div className="flex items-center justify-between gap-2 sm:justify-end">
                   <Link
-                    href={getMenuItemsPageHref(search, currentPage - 1)}
+                    href={getCategoriesPageHref(search, currentPage - 1)}
                     aria-disabled={!canGoToPreviousPage}
                     className={`inline-flex w-28 items-center justify-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition ${
                       canGoToPreviousPage
@@ -343,7 +284,7 @@ export default async function MenuItemsPage({
                   </div>
 
                   <Link
-                    href={getMenuItemsPageHref(search, currentPage + 1)}
+                    href={getCategoriesPageHref(search, currentPage + 1)}
                     aria-disabled={!canGoToNextPage}
                     className={`inline-flex w-28 items-center justify-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition ${
                       canGoToNextPage

@@ -1,30 +1,206 @@
 import prisma from '../prisma';
 import { Request, Response } from 'express';
 
-type ExistingOrderRecord = NonNullable<
-  Awaited<ReturnType<typeof prisma.order.findUnique>>
-> & {
+type ExistingOrderRecord = {
+  id: number;
+  clientId: number;
+  total: number;
+  status: string;
+  deliveryDate: Date | null;
+  discount: number | null;
+  note: string | null;
+  items: Array<{
+    id: number;
+    menuItemId: number;
+    quantity: number;
+    price: number;
+    note: string | null;
+  }>;
+};
+
+type OrderItemInput = {
+  menuItemId?: number;
+  quantity?: number;
+  note?: string | null;
+};
+
+type PreparedOrderItem = {
+  menuItemId: number;
+  quantity: number;
+  price: number;
   note: string | null;
 };
 
+export const ORDER_STATUSES = [
+  'pending',
+  'confirmed',
+  'completed',
+  'cancelled',
+] as const;
+
+function normalizeStatus(status: string) {
+  return status.trim().toLowerCase();
+}
+
+function normalizeNote(note: unknown) {
+  return typeof note === 'string' ? note.trim() || null : null;
+}
+
+function roundCurrency(value: number) {
+  return Number(value.toFixed(2));
+}
+
+function buildExistingItemInputs(
+  items: ExistingOrderRecord['items'],
+): OrderItemInput[] {
+  return items.map((item) => ({
+    menuItemId: item.menuItemId,
+    quantity: item.quantity,
+    note: item.note,
+  }));
+}
+
+function parseDeliveryDate(value: unknown) {
+  if (value === undefined) {
+    return {
+      value: undefined as Date | null | undefined,
+      errors: [] as string[],
+    };
+  }
+
+  if (value === null || value === '') {
+    return { value: null as Date | null, errors: [] as string[] };
+  }
+
+  const parsed = new Date(String(value));
+  if (Number.isNaN(parsed.getTime())) {
+    return {
+      value: undefined as Date | null | undefined,
+      errors: ['deliveryDate must be a valid date'],
+    };
+  }
+
+  return { value: parsed, errors: [] as string[] };
+}
+
+async function prepareOrderItems(
+  items: OrderItemInput[] | undefined,
+  requireItems: boolean,
+): Promise<{ items: PreparedOrderItem[]; errors: string[] }> {
+  const errors: string[] = [];
+
+  if (items === undefined) {
+    if (requireItems) {
+      errors.push('At least one order item is required');
+    }
+    return { items: [], errors };
+  }
+
+  if (!Array.isArray(items) || items.length === 0) {
+    errors.push('At least one order item is required');
+    return { items: [], errors };
+  }
+
+  const parsedItems: Array<{
+    menuItemId: number;
+    quantity: number;
+    note: string | null;
+  }> = [];
+  const seenMenuItemIds = new Set<number>();
+
+  items.forEach((item, index) => {
+    if (!item || typeof item !== 'object') {
+      errors.push(`Item ${index + 1} is invalid`);
+      return;
+    }
+
+    if (
+      typeof item.menuItemId !== 'number' ||
+      !Number.isInteger(item.menuItemId) ||
+      item.menuItemId < 1
+    ) {
+      errors.push(`Item ${index + 1} must include a valid menu item`);
+      return;
+    }
+
+    if (
+      typeof item.quantity !== 'number' ||
+      !Number.isInteger(item.quantity) ||
+      item.quantity < 1
+    ) {
+      errors.push(`Item ${index + 1} must include a positive quantity`);
+      return;
+    }
+
+    if (typeof item.note === 'string' && item.note.trim().length > 1000) {
+      errors.push(`Item ${index + 1} note must be less than 1000 characters`);
+      return;
+    }
+
+    if (seenMenuItemIds.has(item.menuItemId)) {
+      errors.push('Each menu item can only be added once');
+      return;
+    }
+
+    seenMenuItemIds.add(item.menuItemId);
+    parsedItems.push({
+      menuItemId: item.menuItemId,
+      quantity: item.quantity,
+      note: normalizeNote(item.note),
+    });
+  });
+
+  if (parsedItems.length === 0) {
+    return { items: [], errors };
+  }
+
+  const menuItems = await prisma.menuItem.findMany({
+    where: {
+      id: {
+        in: parsedItems.map((item) => item.menuItemId),
+      },
+    },
+    select: {
+      id: true,
+      price: true,
+    },
+  });
+
+  const menuItemMap = new Map(
+    menuItems.map((menuItem) => [menuItem.id, menuItem]),
+  );
+
+  const preparedItems = parsedItems.flatMap((item) => {
+    const menuItem = menuItemMap.get(item.menuItemId);
+    if (!menuItem) {
+      errors.push(`Menu item ${item.menuItemId} not found`);
+      return [];
+    }
+
+    return [
+      {
+        menuItemId: item.menuItemId,
+        quantity: item.quantity,
+        price: menuItem.price,
+        note: item.note,
+      },
+    ];
+  });
+
+  return { items: preparedItems, errors };
+}
+
+function calculateOrderTotal(items: PreparedOrderItem[], discount: number) {
+  const subtotal = items.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0,
+  );
+
+  return roundCurrency(Math.max(0, subtotal - discount));
+}
+
 /**
  * GET /orders - Get all orders, filter, sort, pagination
- *
- * Fetches a list of orders with optional filtering, sorting, and pagination.
- *
- * @param req - Express request object containing query parameters for filtering, sorting, and pagination.
- * @param res - Express response object used to send the response back to the client.
- *
- * Query Parameters:
- * - clientId:(exact match).
- * - status:(exact match).
- * - sortBy:(default: 'createdAt').
- * - order:(default: 'asc').
- * - page:(default: 1).
- * - limit:(default: 10).
- *
- * Response:
- * - A JSON object containing pagination info and the list of orders matching the criteria.
  */
 export const orders = async (req: Request, res: Response) => {
   try {
@@ -37,12 +213,10 @@ export const orders = async (req: Request, res: Response) => {
       limit = '10',
     } = req.query;
 
-    // Pagination numbers
     const pageNum = Number(page);
     const limitNum = Number(limit);
     const skip = (pageNum - 1) * limitNum;
 
-    // Sorting (supports multiple fields)
     const sortFields = Array.isArray(sortBy) ? sortBy : [sortBy];
     const sortOrders = Array.isArray(order) ? order : [order];
 
@@ -50,7 +224,6 @@ export const orders = async (req: Request, res: Response) => {
       [field as string]: sortOrders[index] === 'desc' ? 'desc' : 'asc',
     }));
 
-    // Build WHERE conditions
     const where: any = {
       AND: [
         clientId ? { clientId: Number(clientId) } : {},
@@ -58,15 +231,30 @@ export const orders = async (req: Request, res: Response) => {
       ],
     };
 
-    // Query DB
     const orders = await prisma.order.findMany({
       where,
       orderBy,
       skip,
       take: limitNum,
+      include: {
+        client: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+        items: {
+          select: {
+            id: true,
+            menuItemId: true,
+            quantity: true,
+            price: true,
+          },
+        },
+      },
     });
 
-    // Total count for pagination
     const total = await prisma.order.count({ where });
 
     res.json({
@@ -83,44 +271,91 @@ export const orders = async (req: Request, res: Response) => {
 };
 
 /**
- * POST /orders - Create a new order
- *
- * Creates a new order with the provided details.
- *
- * @param req - Express request object containing the order details in the body.
- * @param res - Express response object used to send the response back to the client.
- *
- * Request Body:
- * - clientId:(required).
- * - status:(required).
- * - total:(required, non-negative number).
- * - deliveryDate:(optional).
- * - discount:(optional, default: 0).
+ * POST /orders - Create a new order with nested items.
  */
 export const createOrder = async (req: Request, res: Response) => {
   try {
-    const { clientId, status, total, deliveryDate, discount, note } = req.body;
-
-    //validate
-    const validation = await validateOrder({
+    const {
       clientId,
-      status: status ?? 'pending',
-      total,
+      status = 'pending',
+      deliveryDate,
+      discount = 0,
       note,
-    });
-    if (!validation.valid) {
-      return res.status(400).json({ errors: validation.errors });
+      items,
+    } = req.body;
+
+    const normalizedStatus =
+      typeof status === 'string' ? normalizeStatus(status) : status;
+    const validation = await validateOrder(
+      {
+        clientId,
+        status: normalizedStatus,
+        discount,
+        note,
+        items,
+      },
+      { requireItems: true },
+    );
+    const preparedItems = await prepareOrderItems(items, true);
+    const parsedDeliveryDate = parseDeliveryDate(deliveryDate);
+
+    const errors = [
+      ...validation.errors,
+      ...preparedItems.errors,
+      ...parsedDeliveryDate.errors,
+    ];
+
+    if (errors.length > 0) {
+      return res.status(400).json({ errors: [...new Set(errors)] });
     }
 
-    // Create order
+    const normalizedDiscount = typeof discount === 'number' ? discount : 0;
+    const total = calculateOrderTotal(preparedItems.items, normalizedDiscount);
+
     const newOrder = await prisma.order.create({
       data: {
         clientId,
-        status: status ?? undefined,
+        status: normalizedStatus,
         total,
-        deliveryDate: deliveryDate ? new Date(deliveryDate) : null,
-        discount: discount ?? 0,
-        note: typeof note === 'string' ? note.trim() || null : null,
+        deliveryDate:
+          parsedDeliveryDate.value === undefined
+            ? null
+            : parsedDeliveryDate.value,
+        discount: normalizedDiscount,
+        note: normalizeNote(note),
+        items: {
+          create: preparedItems.items.map((item) => ({
+            menuItemId: item.menuItemId,
+            quantity: item.quantity,
+            price: item.price,
+            note: item.note,
+          })),
+        },
+      },
+      include: {
+        client: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+        items: {
+          select: {
+            id: true,
+            menuItemId: true,
+            quantity: true,
+            price: true,
+            note: true,
+            menuItem: {
+              select: {
+                id: true,
+                name: true,
+                subtitle: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -132,21 +367,40 @@ export const createOrder = async (req: Request, res: Response) => {
 };
 
 /**
- * GET /orders/:id - Get order by ID
- *
- * Fetches a single order by its ID.
- *
- * @param req - Express request object containing the order ID in the route parameters.
- * @param res - Express response object used to send the response back to the client.
- *
- * Response:
- * - The order object if found, or a 404 error if not found.
+ * GET /orders/:id - Get order by ID.
  */
 export const getOrderById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const order = await prisma.order.findUnique({
       where: { id: Number(id) },
+      include: {
+        client: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            phone: true,
+          },
+        },
+        items: {
+          select: {
+            id: true,
+            menuItemId: true,
+            quantity: true,
+            price: true,
+            note: true,
+            menuItem: {
+              select: {
+                id: true,
+                name: true,
+                subtitle: true,
+              },
+            },
+          },
+        },
+      },
     });
     if (!order) {
       return res.status(404).json({ error: 'Order not found' });
@@ -159,61 +413,120 @@ export const getOrderById = async (req: Request, res: Response) => {
 };
 
 /**
- * PUT /orders/:id - Update an order
- *
- * Updates an existing order with the provided details.
- *
- * @param req - Express request object containing the order ID in the route parameters and the updated details in the body.
- * @param res - Express response object used to send the response back to the client.
- *
- * Request Body:
- * - clientId:(required).
- * - status:(required).
- * - total:(required, non-negative number).
- * - deliveryDate:(optional).
- * - discount:(optional).
+ * PUT /orders/:id - Update an order and replace its nested items.
  */
 export const updateOrder = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { clientId, status, total, deliveryDate, discount, note } = req.body;
+    const { clientId, status, deliveryDate, discount, note, items } = req.body;
 
     const existingOrder = (await prisma.order.findUnique({
       where: { id: Number(id) },
+      include: {
+        items: {
+          select: {
+            id: true,
+            menuItemId: true,
+            quantity: true,
+            price: true,
+            note: true,
+          },
+        },
+      },
     })) as ExistingOrderRecord | null;
+
     if (!existingOrder) {
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    // validate merged update payload against the stored order
-    const validation = await validateOrder({
-      clientId: clientId !== undefined ? clientId : existingOrder.clientId,
-      status: status !== undefined ? status : existingOrder.status,
-      total: total !== undefined ? total : existingOrder.total,
-      note: note !== undefined ? note : existingOrder.note,
-    });
-    if (!validation.valid) {
-      return res.status(400).json({ errors: validation.errors });
+    const nextClientId =
+      clientId !== undefined ? clientId : existingOrder.clientId;
+    const nextStatus =
+      status !== undefined
+        ? typeof status === 'string'
+          ? normalizeStatus(status)
+          : status
+        : existingOrder.status;
+    const nextDiscount =
+      discount !== undefined ? discount : (existingOrder.discount ?? 0);
+    const nextNote = note !== undefined ? note : existingOrder.note;
+    const nextItems =
+      items !== undefined
+        ? items
+        : buildExistingItemInputs(existingOrder.items);
+
+    const validation = await validateOrder(
+      {
+        clientId: nextClientId,
+        status: nextStatus,
+        discount: nextDiscount,
+        note: nextNote,
+        items: nextItems,
+      },
+      { requireItems: true },
+    );
+    const preparedItems = await prepareOrderItems(nextItems, true);
+    const parsedDeliveryDate = parseDeliveryDate(deliveryDate);
+
+    const errors = [
+      ...validation.errors,
+      ...preparedItems.errors,
+      ...parsedDeliveryDate.errors,
+    ];
+
+    if (errors.length > 0) {
+      return res.status(400).json({ errors: [...new Set(errors)] });
     }
 
-    // Update order
+    const nextDeliveryDate =
+      parsedDeliveryDate.value === undefined
+        ? existingOrder.deliveryDate
+        : parsedDeliveryDate.value;
+    const total = calculateOrderTotal(preparedItems.items, nextDiscount);
+
     const updatedOrder = await prisma.order.update({
       where: { id: Number(id) },
       data: {
-        clientId: clientId !== undefined ? clientId : existingOrder.clientId,
-        status: status !== undefined ? status : existingOrder.status,
-        total: total !== undefined ? total : existingOrder.total,
-        deliveryDate:
-          deliveryDate !== undefined
-            ? new Date(deliveryDate)
-            : existingOrder.deliveryDate,
-        discount: discount !== undefined ? discount : existingOrder.discount,
-        note:
-          note !== undefined
-            ? typeof note === 'string'
-              ? note.trim() || null
-              : null
-            : existingOrder.note,
+        clientId: nextClientId,
+        status: nextStatus,
+        total,
+        deliveryDate: nextDeliveryDate,
+        discount: nextDiscount,
+        note: normalizeNote(nextNote),
+        items: {
+          deleteMany: {},
+          create: preparedItems.items.map((item) => ({
+            menuItemId: item.menuItemId,
+            quantity: item.quantity,
+            price: item.price,
+            note: item.note,
+          })),
+        },
+      },
+      include: {
+        client: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+        items: {
+          select: {
+            id: true,
+            menuItemId: true,
+            quantity: true,
+            price: true,
+            note: true,
+            menuItem: {
+              select: {
+                id: true,
+                name: true,
+                subtitle: true,
+              },
+            },
+          },
+        },
       },
     });
     res.json(updatedOrder);
@@ -224,15 +537,7 @@ export const updateOrder = async (req: Request, res: Response) => {
 };
 
 /**
- * DELETE /orders/:id - Delete an order
- *
- * Deletes an existing order by its ID.
- *
- * @param req - Express request object containing the order ID in the route parameters.
- * @param res - Express response object used to send the response back to the client.
- *
- * Response:
- * - A success message if the order was deleted, or a 404 error if the order was not found.
+ * DELETE /orders/:id - Delete an order and its nested items.
  */
 export const deleteOrder = async (req: Request, res: Response) => {
   try {
@@ -243,51 +548,78 @@ export const deleteOrder = async (req: Request, res: Response) => {
     if (!existingOrder) {
       return res.status(404).json({ error: 'Order not found' });
     }
+
+    await prisma.order.update({
+      where: { id: Number(id) },
+      data: {
+        items: {
+          deleteMany: {},
+        },
+      },
+    });
     await prisma.order.delete({
       where: { id: Number(id) },
     });
-    res.json({ message: 'Order deleted successfully' });
+    res.status(204).end();
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
 
-/--------------------------------------------- Helper Functions ---------------------------------------------/;
-
-/**
- * Validates the order data before creating or updating an order.
- *
- * @param data - An object containing the order details to validate.
- * @return An object containing a boolean 'valid' indicating if the data is valid, and an array of 'errors' if any validation checks fail.
- */
-export const validateOrder = async (data: {
-  clientId?: number;
-  status?: string;
-  total?: number;
-  note?: string | null;
-}): Promise<{ valid: boolean; errors: string[] }> => {
+export const validateOrder = async (
+  data: {
+    clientId?: number;
+    status?: string;
+    discount?: number | null;
+    note?: string | null;
+    items?: OrderItemInput[];
+  },
+  options?: { requireItems?: boolean },
+): Promise<{ valid: boolean; errors: string[] }> => {
   const errors: string[] = [];
 
-  // Required fields
   if (data.clientId === undefined) {
     errors.push('clientId is required');
   }
+  if (
+    data.clientId !== undefined &&
+    (!Number.isInteger(data.clientId) || data.clientId < 1)
+  ) {
+    errors.push('clientId must be a positive integer');
+  }
+
   if (data.status === undefined) {
     errors.push('status is required');
   }
-  if (data.total === undefined) {
-    errors.push('total is required');
+  if (typeof data.status === 'string' && data.status.trim() === '') {
+    errors.push('status is required');
   }
   if (
-    data.total !== undefined &&
-    (typeof data.total !== 'number' || data.total < 0)
+    typeof data.status === 'string' &&
+    data.status.trim() !== '' &&
+    !ORDER_STATUSES.includes(
+      normalizeStatus(data.status) as (typeof ORDER_STATUSES)[number],
+    )
   ) {
-    errors.push('total must be a non-negative number');
+    errors.push(
+      'Status must be one of: pending, confirmed, completed, cancelled',
+    );
   }
 
-  // Check existence of clientId
-  if (data.clientId !== undefined) {
+  if (
+    data.discount !== undefined &&
+    data.discount !== null &&
+    (typeof data.discount !== 'number' || data.discount < 0)
+  ) {
+    errors.push('discount must be a non-negative number');
+  }
+
+  if (
+    data.clientId !== undefined &&
+    Number.isInteger(data.clientId) &&
+    data.clientId > 0
+  ) {
     const clientExists = await prisma.client.findUnique({
       where: { id: data.clientId },
     });
@@ -296,22 +628,20 @@ export const validateOrder = async (data: {
     }
   }
 
-  // validate length
-  if (data.status && data.status.length > 50) {
-    errors.push('Status must be 50 characters or less');
-  }
   if (data.note && data.note.trim().length > 1000) {
     errors.push('Note must be less than 1000 characters');
   }
+
+  if (
+    options?.requireItems &&
+    (!Array.isArray(data.items) || data.items.length === 0)
+  ) {
+    errors.push('At least one order item is required');
+  }
+
   return { valid: errors.length === 0, errors };
 };
 
-/**
- * Interface representing the result of validating order data.
- * - valid: A boolean indicating whether the order data is valid or not.
- * - errors: An array of strings describing any validation errors that were found.
- * This interface is used to standardize the response from the validateOrder function, allowing the controller functions to easily check if the data is valid and handle any errors accordingly.
- */
 export interface OrderValidationResult {
   valid: boolean;
   errors: string[];

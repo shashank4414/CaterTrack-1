@@ -6,7 +6,7 @@ type Params = { params: Promise<{ id: string }> };
 
 export async function GET(_req: NextRequest, { params }: Params) {
   const { id } = await params;
-  const res = await fetch(`${API_BASE_URL}/menu-items/${id}`, {
+  const res = await fetch(`${API_BASE_URL}/categories/${id}`, {
     cache: 'no-store',
   });
   const data = await res.json();
@@ -16,7 +16,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
 export async function PUT(req: NextRequest, { params }: Params) {
   const { id } = await params;
   const body = await req.json();
-  const res = await fetch(`${API_BASE_URL}/menu-items/${id}`, {
+  const res = await fetch(`${API_BASE_URL}/categories/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -27,7 +27,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
 
 export async function DELETE(_req: NextRequest, { params }: Params) {
   const { id } = await params;
-  const res = await fetch(`${API_BASE_URL}/menu-items/${id}`, {
+  const res = await fetch(`${API_BASE_URL}/categories/${id}`, {
     method: 'DELETE',
   });
   if (res.status === 204) return new NextResponse(null, { status: 204 });

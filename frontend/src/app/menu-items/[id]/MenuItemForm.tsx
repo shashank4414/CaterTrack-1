@@ -97,7 +97,9 @@ export default function MenuItemForm({
       }
 
       const nextMenuItemId = isEditing ? menuItemId : body?.id;
-      router.push(nextMenuItemId ? `/menu-items/${nextMenuItemId}` : '/menu-items');
+      router.push(
+        nextMenuItemId ? `/menu-items/${nextMenuItemId}` : '/menu-items',
+      );
       router.refresh();
     } catch {
       setErrors(['Something went wrong. Please try again.']);

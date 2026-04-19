@@ -49,11 +49,11 @@ export default function SearchInput({
         />
       </svg>
       <input
-        id="menu-item-search"
+        id="category-search"
         type="search"
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        placeholder="Search by name or description…"
+        placeholder="Search by name or subtitle…"
         className="flex-1 bg-transparent py-1.5 text-sm text-slate-900 placeholder-stone-400 outline-none"
       />
       {value && (
