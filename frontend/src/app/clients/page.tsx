@@ -21,24 +21,22 @@ type ClientsPageProps = {
   }>;
 };
 
+import SearchInput from './SearchInput';
+
 const API_BASE_URL = process.env.API_BASE_URL ?? 'http://localhost:3001';
 
 async function getClients(search: string): Promise<ClientsResponse> {
   const query = new URLSearchParams();
-
-  if (search) {
-    query.set('search', search);
-  }
-
+  if (search) query.set('search', search);
   const response = await fetch(`${API_BASE_URL}/clients?${query.toString()}`, {
     cache: 'no-store',
   });
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch clients');
-  }
-
+  if (!response.ok) throw new Error('Failed to fetch clients');
   return response.json();
+}
+
+function getInitials(firstName: string, lastName: string) {
+  return `${firstName[0] ?? ''}${lastName[0] ?? ''}`.toUpperCase();
 }
 
 export default async function ClientsPage({ searchParams }: ClientsPageProps) {
@@ -53,13 +51,28 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
 
   if (result.error || !result.data) {
     return (
-      <main className="min-h-screen bg-slate-100 px-6 py-10 md:px-10">
-        <div className="mx-auto max-w-5xl rounded-3xl border border-red-200 bg-white p-8 shadow-sm">
-          <h1 className="mt-4 text-3xl font-bold tracking-tight text-slate-900">
-            Clients
+      <main className="min-h-screen bg-stone-100 px-4 py-12 sm:px-8">
+        <div className="mx-auto max-w-md rounded-2xl border border-red-100 bg-white p-8 text-center shadow-sm">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
+            <svg
+              className="h-5 w-5 text-red-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"
+              />
+            </svg>
+          </div>
+          <h1 className="text-base font-semibold text-zinc-900">
+            Unable to load clients
           </h1>
-          <p className="mt-3 text-base text-slate-600">
-            Unable to load clients from the API.
+          <p className="mt-1 text-sm text-stone-400">
+            The API request failed. Please try again.
           </p>
         </div>
       </main>
@@ -69,196 +82,229 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
   const { data: clients, total, page, totalPages } = result.data;
 
   return (
-    <main className="min-h-screen bg-slate-100 px-6 py-10 md:px-10">
-      <div className="mx-auto max-w-7xl space-y-8">
-        <section className="rounded-3xl bg-slate-900 px-5 py-6 text-white shadow-xl md:px-8 md:py-10">
-          <div className="mt-2 flex flex-col gap-4 md:mt-5 md:gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-2xl">
-              <h1 className="text-2xl font-bold tracking-tight sm:text-3xl md:text-4xl">
-                Clients
-              </h1>
-              <p className="mt-2 text-sm leading-5 text-slate-300 md:mt-3 md:text-base md:leading-6">
-                View active client records pulled from the backend API.
+    <main className="min-h-screen bg-stone-100 px-4 py-10 sm:px-8 lg:px-12">
+      <div className="mx-auto max-w-6xl space-y-6">
+        {/* Page header */}
+        <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
+              Clients
+            </h1>
+            <p className="mt-0.5 text-sm text-stone-400">
+              Manage and browse your client records.
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-5 rounded-xl border border-stone-200 bg-white px-5 py-3 shadow-sm">
+            <div className="text-center">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-stone-400">
+                Total
               </p>
+              <p className="mt-0.5 text-xl font-bold text-zinc-900">{total}</p>
             </div>
-
-            <div className="grid grid-cols-2 gap-3 sm:gap-4">
-              <div className="rounded-2xl bg-white/10 p-3 ring-1 ring-white/10 backdrop-blur-sm md:p-4">
-                <p className="text-xs text-slate-300 md:text-sm">
-                  Total clients
-                </p>
-                <p className="mt-1 text-xl font-semibold text-white md:mt-2 md:text-2xl">
-                  {total}
-                </p>
-              </div>
-              <div className="rounded-2xl bg-white/10 p-3 ring-1 ring-white/10 backdrop-blur-sm md:p-4">
-                <p className="text-xs text-slate-300 md:text-sm">
-                  Current page
-                </p>
-                <p className="mt-1 text-xl font-semibold text-white md:mt-2 md:text-2xl">
-                  {page}
-                  <span className="ml-1 text-xs font-medium text-slate-300 md:ml-2 md:text-sm">
-                    of {totalPages}
-                  </span>
-                </p>
-              </div>
+            <div className="h-7 w-px bg-stone-200" />
+            <div className="text-center">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-stone-400">
+                Page
+              </p>
+              <p className="mt-0.5 text-xl font-bold text-zinc-900">
+                {page}
+                <span className="ml-1 text-sm font-normal text-stone-300">
+                  / {totalPages}
+                </span>
+              </p>
             </div>
           </div>
-        </section>
+        </header>
 
-        <section className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm md:p-6">
-          <form
-            className="flex flex-col gap-3 md:flex-row md:items-center"
-            action="/clients"
-            method="get"
-          >
-            <div className="flex-1">
-              <label
-                htmlFor="client-search"
-                className="mb-2 block text-sm font-medium text-slate-700"
-              >
-                Search clients
-              </label>
-              <input
-                id="client-search"
-                name="search"
-                type="search"
-                defaultValue={search}
-                placeholder="Search by ID, name, email, phone, or note"
-                className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none ring-0 transition focus:border-slate-500"
-              />
-            </div>
+        {/* Search bar */}
+        <SearchInput defaultValue={search} />
 
-            <div className="flex gap-3 md:self-end">
-              <button
-                type="submit"
-                className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
-              >
-                Search
-              </button>
-              {search ? (
-                <a
-                  href="/clients"
-                  className="rounded-2xl border border-slate-300 px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                >
-                  Clear
-                </a>
-              ) : null}
-            </div>
-          </form>
-        </section>
+        {/* Result count */}
+        {clients.length > 0 && (
+          <p className="text-xs text-stone-400">
+            {search
+              ? `${clients.length} result${clients.length !== 1 ? 's' : ''} for "${search}"`
+              : `${clients.length} client${clients.length !== 1 ? 's' : ''} on this page`}
+          </p>
+        )}
 
+        {/* Empty state */}
         {clients.length === 0 ? (
-          <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-900">
-              {search ? 'No matching clients found' : 'No clients found'}
-            </h2>
-            <p className="mt-2 text-sm text-slate-600">
-              {search
-                ? 'Try a different search term or clear the filter to view all clients.'
-                : 'The API request succeeded, but there are no client records to display yet.'}
+          <div className="rounded-2xl border border-stone-200 bg-white py-16 text-center shadow-sm">
+            <p className="text-sm font-medium text-zinc-700">
+              {search ? 'No matching clients' : 'No clients yet'}
             </p>
-          </section>
+            <p className="mt-1 text-xs text-stone-400">
+              {search
+                ? 'Try adjusting your search term.'
+                : 'Client records will appear here once added.'}
+            </p>
+          </div>
         ) : (
-          <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-            <div className="border-b border-slate-200 px-6 py-5">
-              <h2 className="text-lg font-semibold text-slate-900">
-                Client list
-              </h2>
-              <p className="mt-1 text-sm text-slate-500">
-                {search
-                  ? `Showing ${clients.length} matching records on this page.`
-                  : `Showing ${clients.length} records on this page.`}
-              </p>
-            </div>
-
-            <div className="space-y-4 p-4 md:hidden">
+          <>
+            {/* Mobile cards */}
+            <div className="space-y-2 md:hidden">
               {clients.map((client) => (
                 <article
                   key={client.id}
-                  className="rounded-2xl border border-slate-200 bg-slate-50 p-5 shadow-sm"
+                  className="flex items-start gap-3 rounded-xl border border-stone-200 bg-white px-4 py-3 shadow-sm"
                 >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <h3 className="mt-1 text-lg font-semibold text-slate-900">
-                        {client.firstName} {client.lastName}
-                      </h3>
-                    </div>
-                    <span className="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white">
-                      #{client.id}
-                    </span>
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-xs font-bold text-emerald-700">
+                    {getInitials(client.firstName, client.lastName)}
                   </div>
-
-                  <dl className="mt-5 space-y-4">
-                    <div>
-                      <dd className="mt-1 text-sm text-slate-700">
-                        {client.email || 'N/A'}
-                      </dd>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <p className="truncate text-sm font-semibold text-zinc-900">
+                        {client.firstName} {client.lastName}
+                      </p>
+                      <span className="shrink-0 text-xs text-stone-300">
+                        #{client.id}
+                      </span>
                     </div>
-                    <div>
-                      <dd className="mt-1 text-sm text-slate-700">
-                        {client.phone || 'N/A'}
-                      </dd>
+                    <div className="mt-0.5 flex flex-wrap gap-x-3 text-xs text-zinc-700">
+                      {client.email && (
+                        <span className="flex items-center gap-1">
+                          <svg
+                            className="h-3 w-3 shrink-0 text-stone-300"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={1.75}
+                              d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"
+                            />
+                          </svg>
+                          {client.email}
+                        </span>
+                      )}
+                      {client.phone && (
+                        <span className="flex items-center gap-1">
+                          <svg
+                            className="h-3 w-3 shrink-0 text-stone-300"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={1.75}
+                              d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z"
+                            />
+                          </svg>
+                          {client.phone}
+                        </span>
+                      )}
                     </div>
-                    {client.note?.trim() ? (
-                      <div>
-                        <dd className="mt-1 text-sm leading-6 text-slate-700">
-                          {client.note}
-                        </dd>
-                      </div>
-                    ) : null}
-                  </dl>
+                    {client.note?.trim() && (
+                      <p className="mt-1 truncate text-xs text-stone-300">
+                        {client.note}
+                      </p>
+                    )}
+                  </div>
                 </article>
               ))}
             </div>
 
-            <div className="hidden overflow-x-auto md:block">
-              <table className="min-w-full divide-y divide-slate-200 text-left">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            {/* Desktop table */}
+            <div className="hidden overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm md:block">
+              <table className="min-w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b border-stone-100 bg-stone-50">
+                    <th className="px-5 py-3 text-[10px] font-semibold uppercase tracking-widest text-stone-400">
                       ID
                     </th>
-                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    <th className="px-5 py-3 text-[10px] font-semibold uppercase tracking-widest text-stone-400">
                       Name
                     </th>
-                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    <th className="px-5 py-3 text-[10px] font-semibold uppercase tracking-widest text-stone-400">
                       Email
                     </th>
-                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    <th className="px-5 py-3 text-[10px] font-semibold uppercase tracking-widest text-stone-400">
                       Phone
                     </th>
-                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    <th className="px-5 py-3 text-[10px] font-semibold uppercase tracking-widest text-stone-400">
                       Note
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 bg-white">
+                <tbody className="divide-y divide-stone-50">
                   {clients.map((client) => (
-                    <tr key={client.id} className="align-top hover:bg-slate-50">
-                      <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-slate-900">
+                    <tr
+                      key={client.id}
+                      className="transition hover:bg-emerald-50/50"
+                    >
+                      <td className="whitespace-nowrap px-5 py-3.5 text-xs font-medium text-stone-300">
                         #{client.id}
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="font-medium text-slate-900">
-                          {client.firstName} {client.lastName}
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-xs font-bold text-emerald-700">
+                            {getInitials(client.firstName, client.lastName)}
+                          </div>
+                          <span className="font-medium text-zinc-900">
+                            {client.firstName} {client.lastName}
+                          </span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-sm text-slate-600">
-                        {client.email || 'N/A'}
+                      <td className="px-5 py-3.5 text-zinc-700">
+                        {client.email ? (
+                          <span className="flex items-center gap-1.5">
+                            <svg
+                              className="h-3.5 w-3.5 shrink-0 text-stone-300"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={1.75}
+                                d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"
+                              />
+                            </svg>
+                            {client.email}
+                          </span>
+                        ) : (
+                          <span className="text-stone-200">—</span>
+                        )}
                       </td>
-                      <td className="px-6 py-4 text-sm text-slate-600">
-                        {client.phone || 'N/A'}
+                      <td className="whitespace-nowrap px-5 py-3.5 text-zinc-700">
+                        {client.phone ? (
+                          <span className="flex items-center gap-1.5">
+                            <svg
+                              className="h-3.5 w-3.5 shrink-0 text-stone-300"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={1.75}
+                                d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z"
+                              />
+                            </svg>
+                            {client.phone}
+                          </span>
+                        ) : (
+                          <span className="text-stone-200">—</span>
+                        )}
                       </td>
-                      <td className="max-w-xs px-6 py-4 text-sm text-slate-600">
-                        {client.note?.trim() || ''}
+                      <td className="max-w-xs px-5 py-3.5 text-stone-400">
+                        {client.note?.trim() || (
+                          <span className="text-stone-200">—</span>
+                        )}
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          </section>
+          </>
         )}
       </div>
     </main>

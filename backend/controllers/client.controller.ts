@@ -43,31 +43,26 @@ export const getClients = async (req: Request, res: Response) => {
           {
             firstName: {
               contains: searchValue,
-              mode: 'insensitive',
             },
           },
           {
             lastName: {
               contains: searchValue,
-              mode: 'insensitive',
             },
           },
           {
             email: {
               contains: searchValue,
-              mode: 'insensitive',
             },
           },
           {
             phone: {
               contains: searchValue,
-              mode: 'insensitive',
             },
           },
           {
             note: {
               contains: searchValue,
-              mode: 'insensitive',
             },
           },
           ...(Number.isInteger(numericSearch) ? [{ id: numericSearch }] : []),
@@ -96,13 +91,9 @@ export const getClients = async (req: Request, res: Response) => {
             }
           : {},
 
-        phone
-          ? { phone: { contains: String(phone), mode: 'insensitive' } }
-          : {},
+        phone ? { phone: { contains: String(phone) } } : {},
 
-        email
-          ? { email: { contains: String(email), mode: 'insensitive' } }
-          : {},
+        email ? { email: { contains: String(email) } } : {},
       ],
     };
 
