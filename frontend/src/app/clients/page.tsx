@@ -18,6 +18,7 @@ type ClientsResponse = {
 type ClientsPageProps = {
   searchParams?: Promise<{
     search?: string | string[];
+    page?: string | string[];
   }>;
 };
 
@@ -26,9 +27,10 @@ import SearchInput from './SearchInput';
 
 const API_BASE_URL = process.env.API_BASE_URL ?? 'http://localhost:3001';
 
-async function getClients(search: string): Promise<ClientsResponse> {
+async function getClients(search: string, page: number): Promise<ClientsResponse> {
   const query = new URLSearchParams();
   if (search) query.set('search', search);
+  if (page > 1) query.set('page', String(page));
   const response = await fetch(`${API_BASE_URL}/clients?${query.toString()}`, {
     cache: 'no-store',
   });
@@ -40,13 +42,25 @@ function getInitials(firstName: string, lastName: string) {
   return `${firstName[0] ?? ''}${lastName[0] ?? ''}`.toUpperCase();
 }
 
+function getClientsPageHref(search: string, page: number) {
+  const query = new URLSearchParams();
+  if (search) query.set('search', search);
+  if (page > 1) query.set('page', String(page));
+  const queryString = query.toString();
+  return queryString ? `/clients?${queryString}` : '/clients';
+}
+
 export default async function ClientsPage({ searchParams }: ClientsPageProps) {
   const resolvedSearchParams = await searchParams;
   const search = Array.isArray(resolvedSearchParams?.search)
     ? resolvedSearchParams.search[0]?.trim() || ''
     : resolvedSearchParams?.search?.trim() || '';
+  const rawPage = Array.isArray(resolvedSearchParams?.page)
+    ? resolvedSearchParams.page[0]?.trim() || '1'
+    : resolvedSearchParams?.page?.trim() || '1';
+  const page = Math.max(1, Number(rawPage) || 1);
 
-  const result = await getClients(search)
+  const result = await getClients(search, page)
     .then((data) => ({ data, error: false }))
     .catch(() => ({ data: null, error: true }));
 
@@ -80,13 +94,17 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
     );
   }
 
-  const { data: clients, total, page, totalPages } = result.data;
+  const { data: clients, total, page: currentPage, totalPages } = result.data;
+  const pageStart = total === 0 ? 0 : (currentPage - 1) * result.data.limit + 1;
+  const pageEnd = total === 0 ? 0 : pageStart + clients.length - 1;
+  const canGoToPreviousPage = currentPage > 1;
+  const canGoToNextPage = currentPage < totalPages;
 
   return (
     <main className="min-h-screen bg-stone-100 px-4 py-10 sm:px-8 lg:px-12">
       <div className="mx-auto max-w-6xl space-y-6">
         {/* Page header */}
-        <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <header>
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
               Clients
@@ -94,26 +112,6 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
             <p className="mt-0.5 text-sm text-stone-400">
               Manage and browse your client records.
             </p>
-          </div>
-          <div className="flex shrink-0 items-center gap-5 rounded-xl border border-stone-200 bg-white px-5 py-3 shadow-sm">
-            <div className="text-center">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-stone-400">
-                Total
-              </p>
-              <p className="mt-0.5 text-xl font-bold text-zinc-900">{total}</p>
-            </div>
-            <div className="h-7 w-px bg-stone-200" />
-            <div className="text-center">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-stone-400">
-                Page
-              </p>
-              <p className="mt-0.5 text-xl font-bold text-zinc-900">
-                {page}
-                <span className="ml-1 text-sm font-normal text-stone-300">
-                  / {totalPages}
-                </span>
-              </p>
-            </div>
           </div>
         </header>
 
@@ -125,7 +123,7 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
           <p className="text-xs text-stone-400">
             {search
               ? `${clients.length} result${clients.length !== 1 ? 's' : ''} for "${search}"`
-              : `${clients.length} client${clients.length !== 1 ? 's' : ''} on this page`}
+              : `${clients.length} client${clients.length !== 1 ? 's' : ''} total`}
           </p>
         )}
 
@@ -311,6 +309,80 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
                 </tbody>
               </table>
             </div>
+
+            {totalPages > 1 && (
+              <div className="flex flex-col gap-3 rounded-2xl border border-stone-200 bg-white/80 px-4 py-4 shadow-sm backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between sm:px-5">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-stone-400">
+                    Pagination
+                  </p>
+                  <p className="mt-1 text-sm text-zinc-700">
+                    Showing <span className="font-semibold text-zinc-900">{pageStart}</span>
+                    {' '}-{' '}
+                    <span className="font-semibold text-zinc-900">{pageEnd}</span>
+                    {' '}of <span className="font-semibold text-zinc-900">{total}</span>
+                    {' '}clients
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between gap-2 sm:justify-end">
+                  <Link
+                    href={getClientsPageHref(search, currentPage - 1)}
+                    aria-disabled={!canGoToPreviousPage}
+                    className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition ${
+                      canGoToPreviousPage
+                        ? 'border border-stone-200 bg-white text-zinc-700 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700'
+                        : 'pointer-events-none border border-stone-100 bg-stone-50 text-stone-300'
+                    }`}
+                  >
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1.75}
+                        d="M15.75 19.5 8.25 12l7.5-7.5"
+                      />
+                    </svg>
+                    Previous
+                  </Link>
+
+                  <div className="rounded-full border border-emerald-100 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700">
+                    Page {currentPage}
+                    <span className="ml-1 font-normal text-emerald-500">of {totalPages}</span>
+                  </div>
+
+                  <Link
+                    href={getClientsPageHref(search, currentPage + 1)}
+                    aria-disabled={!canGoToNextPage}
+                    className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition ${
+                      canGoToNextPage
+                        ? 'border border-stone-200 bg-white text-zinc-700 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700'
+                        : 'pointer-events-none border border-stone-100 bg-stone-50 text-stone-300'
+                    }`}
+                  >
+                    Next
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1.75}
+                        d="M8.25 4.5 15.75 12l-7.5 7.5"
+                      />
+                    </svg>
+                  </Link>
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>
