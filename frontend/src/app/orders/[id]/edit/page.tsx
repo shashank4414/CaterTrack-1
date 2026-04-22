@@ -24,7 +24,7 @@ export default async function EditOrderPage({ params }: EditOrderPageProps) {
   if (!order) notFound();
 
   return (
-    <main className="min-h-screen bg-amber-50 px-4 py-10 sm:px-8 lg:px-12">
+    <main className="px-4 py-10 sm:px-8 lg:px-12">
       <div className="mx-auto max-w-4xl space-y-6">
         <Link
           href={`/orders/${id}`}

@@ -84,7 +84,7 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
 
   if (result.error || !result.data) {
     return (
-      <main className="min-h-screen bg-amber-50 px-4 py-12 sm:px-8">
+      <main className="px-4 py-12 sm:px-8">
         <div className="mx-auto max-w-md rounded-3xl border border-red-200 bg-white/90 p-8 text-center shadow-[0_24px_60px_-36px_rgba(120,53,15,0.45)] backdrop-blur-sm">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
             <svg
@@ -130,7 +130,7 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
         : 'No clients yet';
 
   return (
-    <main className="min-h-screen bg-amber-50 px-4 py-10 sm:px-8 lg:px-12">
+    <main className="px-4 py-10 sm:px-8 lg:px-12">
       <div className="mx-auto max-w-6xl space-y-6">
         {/* Page header */}
         <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">

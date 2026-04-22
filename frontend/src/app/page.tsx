@@ -204,11 +204,11 @@ export default async function Home() {
   ];
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.22),transparent_34%),linear-gradient(180deg,#fff8ef_0%,#fff1e0_48%,#ffe4c7_100%)] px-4 py-8 text-slate-900 sm:px-8 lg:px-12">
+    <main className="px-4 py-8 text-slate-900 sm:px-8 lg:px-12">
       <div className="mx-auto max-w-7xl space-y-6">
         <section className="overflow-hidden rounded-4xl border border-orange-200/70 bg-white/75 shadow-[0_30px_80px_-38px_rgba(120,53,15,0.45)] backdrop-blur-sm">
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.9fr)]">
-            <div className="relative space-y-5 px-6 py-8 sm:px-8 sm:py-10">
+          <div className="grid lg:grid-cols-[minmax(0,1fr)_minmax(360px,1fr)]">
+            <div className="relative space-y-4 px-5 py-6 sm:px-7 sm:py-7">
               <div className="absolute -left-10 top-6 h-32 w-32 rounded-full bg-orange-300/20 blur-3xl" />
               <div className="absolute bottom-2 right-10 h-28 w-28 rounded-full bg-rose-300/20 blur-3xl" />
               <div className="relative">
@@ -239,14 +239,12 @@ export default async function Home() {
               </div>
             </div>
 
-            <div className="border-t border-orange-100/80 bg-[linear-gradient(180deg,rgba(255,248,240,0.95),rgba(255,238,219,0.95))] px-4 py-4 sm:px-8 sm:py-8 lg:border-l lg:border-t-0">
+            <div className="px-4 py-4 sm:px-6 sm:py-6">
               <div className="rounded-3xl border border-orange-200/80 bg-white/82 p-4 text-slate-900 shadow-[0_28px_64px_-40px_rgba(120,53,15,0.35)] backdrop-blur-sm sm:rounded-[1.75rem] sm:p-5">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-orange-700">
                   Workflow pulse
                 </p>
-                <p className="mt-1 text-sm text-stone-600">
-                  Current order mix across the kitchen pipeline.
-                </p>
+
                 <div className="mt-3 grid grid-cols-2 gap-2 sm:mt-4 sm:gap-4 lg:grid-cols-1 xl:grid-cols-2">
                   {statusCards.map((status) => {
                     const share =

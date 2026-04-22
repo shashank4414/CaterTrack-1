@@ -11,7 +11,7 @@ export default async function NewOrderPage() {
   const missingMenuItems = menuItems.length === 0;
 
   return (
-    <main className="min-h-screen bg-amber-50 px-4 py-10 sm:px-8 lg:px-12">
+    <main className="px-4 py-10 sm:px-8 lg:px-12">
       <div className="mx-auto max-w-4xl space-y-6">
         <Link
           href="/orders"
