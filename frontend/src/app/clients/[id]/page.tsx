@@ -312,7 +312,7 @@ export default async function ClientDetailPage({
                 </thead>
                 <tbody className="divide-y divide-stone-100">
                   {orders.map((order) => {
-                    const orderHref = `/orders/${order.id}`;
+                    const orderHref = `/orders/${order.id}?from=/clients/${id}`;
                     const statusStyle =
                       STATUS_STYLES[order.status.toLowerCase()] ??
                       'bg-stone-50 text-stone-600 border-stone-200';

@@ -12,12 +12,17 @@ import {
 
 type OrderDetailPageProps = {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ from?: string }>;
 };
 
 export default async function OrderDetailPage({
   params,
+  searchParams,
 }: OrderDetailPageProps) {
   const { id } = await params;
+  const { from } = await searchParams;
+  const backHref = from?.startsWith('/') ? from : '/orders';
+  const backLabel = from?.startsWith('/clients/') ? 'Client' : 'Orders';
   const order = await getOrder(id).catch(() => null);
 
   if (!order) notFound();
@@ -31,7 +36,7 @@ export default async function OrderDetailPage({
     <main className="px-4 py-10 sm:px-8 lg:px-12">
       <div className="mx-auto max-w-4xl space-y-6">
         <Link
-          href="/orders"
+          href={backHref}
           className="inline-flex items-center gap-1.5 text-sm text-stone-500 transition hover:text-orange-700"
         >
           <svg
@@ -47,7 +52,7 @@ export default async function OrderDetailPage({
               d="M15.75 19.5 8.25 12l7.5-7.5"
             />
           </svg>
-          Orders
+          {backLabel}
         </Link>
 
         <section className="rounded-3xl border border-stone-300 bg-white/88 p-6 shadow-[0_24px_60px_-36px_rgba(120,53,15,0.4)] backdrop-blur-sm">
