@@ -312,6 +312,7 @@ export default async function ClientDetailPage({
                 </thead>
                 <tbody className="divide-y divide-stone-100">
                   {orders.map((order) => {
+                    const orderHref = `/orders/${order.id}`;
                     const statusStyle =
                       STATUS_STYLES[order.status.toLowerCase()] ??
                       'bg-stone-50 text-stone-600 border-stone-200';
@@ -321,32 +322,61 @@ export default async function ClientDetailPage({
                         className="transition hover:bg-orange-50/70"
                       >
                         <td className="whitespace-nowrap px-4 py-3 text-xs font-medium text-stone-500">
-                          #{order.id}
+                          <Link
+                            href={orderHref}
+                            className="block -mx-4 -my-3 px-4 py-3 text-inherit outline-none transition focus-visible:bg-orange-50/70"
+                          >
+                            #{order.id}
+                          </Link>
                         </td>
                         <td className="px-4 py-3">
-                          <span
-                            className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium capitalize ${statusStyle}`}
+                          <Link
+                            href={orderHref}
+                            tabIndex={-1}
+                            className="block -mx-4 -my-3 px-4 py-3 outline-none transition focus-visible:bg-orange-50/70"
                           >
-                            {order.status}
-                          </span>
+                            <span
+                              className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium capitalize ${statusStyle}`}
+                            >
+                              {order.status}
+                            </span>
+                          </Link>
                         </td>
                         <td className="whitespace-nowrap px-4 py-3 font-medium text-slate-900">
-                          {formatCurrency(order.total)}
-                          {order.discount ? (
-                            <span className="ml-1.5 text-xs text-orange-700">
-                              -{formatCurrency(order.discount)} off
-                            </span>
-                          ) : null}
+                          <Link
+                            href={orderHref}
+                            tabIndex={-1}
+                            className="block -mx-4 -my-3 px-4 py-3 text-inherit outline-none transition focus-visible:bg-orange-50/70"
+                          >
+                            {formatCurrency(order.total)}
+                            {order.discount ? (
+                              <span className="ml-1.5 text-xs text-orange-700">
+                                -{formatCurrency(order.discount)} off
+                              </span>
+                            ) : null}
+                          </Link>
                         </td>
                         <td className="hidden whitespace-nowrap px-4 py-3 text-stone-500 sm:table-cell">
-                          {order.deliveryDate ? (
-                            formatDate(order.deliveryDate)
-                          ) : (
-                            <span className="text-stone-300">—</span>
-                          )}
+                          <Link
+                            href={orderHref}
+                            tabIndex={-1}
+                            className="block -mx-4 -my-3 px-4 py-3 text-inherit outline-none transition focus-visible:bg-orange-50/70"
+                          >
+                            {order.deliveryDate ? (
+                              formatDate(order.deliveryDate)
+                            ) : (
+                              <span className="text-stone-300">—</span>
+                            )}
+                          </Link>
                         </td>
                         <td className="hidden whitespace-nowrap px-4 py-3 text-stone-500 sm:table-cell">
-                          {formatDate(order.createdAt)}
+                          <Link
+                            href={orderHref}
+                            tabIndex={-1}
+                            className="block -mx-4 -my-3 px-4 py-3 text-inherit outline-none transition focus-visible:bg-orange-50/70"
+                          >
+                            {formatDate(order.createdAt)}
+                          </Link>
                         </td>
                       </tr>
                     );
