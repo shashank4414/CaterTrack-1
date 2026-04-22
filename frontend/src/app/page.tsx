@@ -226,14 +226,38 @@ export default async function Home() {
               <div className="relative flex flex-wrap gap-3">
                 <Link
                   href="/orders"
-                  className="inline-flex items-center justify-center rounded-full border border-orange-200 bg-white/85 px-5 py-3 text-sm font-semibold text-orange-800 transition hover:border-orange-300 hover:bg-orange-50"
+                  className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-white/85 px-5 py-3 text-sm font-semibold text-orange-800 transition hover:border-orange-300 hover:bg-orange-50"
                 >
-                  Open orders board
+                  <svg
+                    width="15"
+                    height="15"
+                    viewBox="0 0 16 16"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <rect x="3" y="1" width="10" height="14" rx="1.5" />
+                    <path d="M6 5h4M6 8h4M6 11h2" />
+                  </svg>
+                  All Orders
                 </Link>
                 <Link
                   href="/orders/new"
-                  className="inline-flex items-center justify-center rounded-full border border-orange-200 bg-white/85 px-5 py-3 text-sm font-semibold text-orange-800 transition hover:border-orange-300 hover:bg-orange-50"
+                  className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-white/85 px-5 py-3 text-sm font-semibold text-orange-800 transition hover:border-orange-300 hover:bg-orange-50"
                 >
+                  <svg
+                    width="15"
+                    height="15"
+                    viewBox="0 0 16 16"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinecap="round"
+                  >
+                    <path d="M8 3v10M3 8h10" />
+                  </svg>
                   New order
                 </Link>
               </div>

@@ -5,11 +5,104 @@ import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 
 const NAV_ITEMS = [
-  { href: '/', label: 'Home' },
-  { href: '/orders', label: 'Orders' },
-  { href: '/clients', label: 'Clients' },
-  { href: '/menu-items', label: 'Menu Items' },
-  { href: '/categories', label: 'Categories' },
+  {
+    href: '/',
+    label: 'Home',
+    icon: (
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 16 16"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M2 6.5L8 2l6 4.5V14a1 1 0 01-1 1H3a1 1 0 01-1-1V6.5z" />
+        <path d="M6 15V9h4v6" />
+      </svg>
+    ),
+  },
+  {
+    href: '/orders',
+    label: 'Orders',
+    icon: (
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 16 16"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <rect x="3" y="1" width="10" height="14" rx="1.5" />
+        <path d="M6 5h4M6 8h4M6 11h2" />
+      </svg>
+    ),
+  },
+  {
+    href: '/clients',
+    label: 'Clients',
+    icon: (
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 16 16"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <circle cx="8" cy="5" r="3" />
+        <path d="M2 14c0-3.314 2.686-5 6-5s6 1.686 6 5" />
+      </svg>
+    ),
+  },
+  {
+    href: '/menu-items',
+    label: 'Menu Items',
+    icon: (
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 16 16"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M5 2v5a3 3 0 006 0V2" />
+        <path d="M8 9v5" />
+        <path d="M12 2c0 3-1.5 5-4 5.5" />
+      </svg>
+    ),
+  },
+  {
+    href: '/categories',
+    label: 'Categories',
+    icon: (
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 16 16"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <rect x="1" y="1" width="6" height="6" rx="1" />
+        <rect x="9" y="1" width="6" height="6" rx="1" />
+        <rect x="1" y="9" width="6" height="6" rx="1" />
+        <rect x="9" y="9" width="6" height="6" rx="1" />
+      </svg>
+    ),
+  },
 ];
 
 function isActivePath(pathname: string, href: string) {
@@ -84,12 +177,13 @@ export default function AppNavigation() {
                 key={item.href}
                 href={item.href}
                 onClick={() => setDrawerOpen(false)}
-                className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
+                className={`flex items-center gap-2.5 rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
                   isActive
                     ? 'border-orange-300 bg-orange-100 text-orange-900 shadow-[0_4px_12px_-6px_rgba(180,83,9,0.35)]'
                     : 'border-orange-200/60 bg-white/70 text-stone-600 hover:border-orange-300 hover:bg-orange-50 hover:text-orange-800'
                 }`}
               >
+                {item.icon}
                 {item.label}
               </Link>
             );
@@ -144,12 +238,13 @@ export default function AppNavigation() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                    className={`flex items-center gap-1.5 whitespace-nowrap rounded-full border px-4 py-2 text-sm font-semibold transition ${
                       isActive
                         ? 'border-orange-300 bg-orange-100 text-orange-900 shadow-[0_12px_24px_-20px_rgba(180,83,9,0.45)]'
                         : 'border-orange-200/80 bg-white/70 text-stone-600 hover:border-orange-300 hover:bg-orange-50 hover:text-orange-800'
                     }`}
                   >
+                    {item.icon}
                     {item.label}
                   </Link>
                 );
