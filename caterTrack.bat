@@ -15,6 +15,16 @@ if not exist "%BACKEND_DIR%\package.json" (
 	exit /b 1
 )
 
+if not exist "%BACKEND_DIR%\node_modules\tsx\package.json" (
+	echo Installing backend dependencies...
+	call npm.cmd --prefix "%BACKEND_DIR%" install
+	if errorlevel 1 (
+		echo [ERROR] Backend dependency installation failed.
+		pause
+		exit /b 1
+	)
+)
+
 if not exist "%FRONTEND_DIR%\package.json" (
 	echo [ERROR] Frontend package.json not found at:
 	echo         %FRONTEND_DIR%
