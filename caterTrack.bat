@@ -22,18 +22,44 @@ if not exist "%FRONTEND_DIR%\package.json" (
 	exit /b 1
 )
 
-echo Starting API and frontend in separate windows...
+echo Starting API...
 
 start "CaterTrack API" /D "%BACKEND_DIR%" cmd /k "npm.cmd run dev"
-start "CaterTrack Frontend" /D "%FRONTEND_DIR%" cmd /k "npm.cmd run dev"
 
-echo Waiting for servers to initialize...
+echo Waiting for API to be ready...
+set /a RETRIES=0
+:wait_for_api
+curl -s --max-time 2 "%API_URL%" >nul 2>&1
+if %errorlevel% equ 0 goto api_ready
+set /a RETRIES+=1
+if %RETRIES% geq 30 (
+    echo [ERROR] API did not respond after 60 seconds. Starting frontend anyway...
+    goto start_frontend
+)
+timeout /t 2 /nobreak >nul
+goto wait_for_api
+
+:api_ready
+echo API is ready.
+
+:start_frontend
+echo Starting frontend...
+start "CaterTrack Frontend" /D "%FRONTEND_DIR%" cmd /k "npm run dev"
+
+echo Waiting for frontend to initialize...
 timeout /t 6 /nobreak >nul
 
 echo Opening app links in your default browser...
 start "" "%FRONTEND_URL%"
 start "" "%SWAGGER_URL%"
 
-echo Done. API and frontend were started, and links were opened.
+echo.
+echo Servers are running. Press any key to stop all services and exit...
+pause >nul
+
+echo Stopping services...
+taskkill /FI "WINDOWTITLE eq CaterTrack API" /T /F >nul 2>&1
+taskkill /FI "WINDOWTITLE eq CaterTrack Frontend" /T /F >nul 2>&1
+echo All services stopped.
 endlocal
 exit /b 0
