@@ -350,7 +350,8 @@ export default function OrderForm({
                         {filteredClients.length > 0 ? (
                           <div className="divide-y divide-stone-100">
                             {filteredClients.map((client) => {
-                              const isSelected = String(client.id) === fields.clientId;
+                              const isSelected =
+                                String(client.id) === fields.clientId;
 
                               return (
                                 <button
