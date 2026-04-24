@@ -2,7 +2,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 import { PrismaLibSql } from '@prisma/adapter-libsql';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '../generated/prisma/client/client';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const databasePath = path.join(__dirname, '..', 'dev.db').replace(/\\/g, '/');
